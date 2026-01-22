@@ -17,7 +17,7 @@ object Intake : Subsystem {
 
     private lateinit var intakeMotor: MotorEx
 
-    private lateinit var motors: MotorGroup
+
 
     private var power = 0.0
     private var isInitialized = false
@@ -36,7 +36,7 @@ object Intake : Subsystem {
     override fun periodic() {
         if (!isInitialized) return
 
-        intakeMotor.power = power*/
+        intakeMotor.power = power
 
         ActiveOpMode.telemetry.run {
             addData("Intake State", RobotState.intakeState)
