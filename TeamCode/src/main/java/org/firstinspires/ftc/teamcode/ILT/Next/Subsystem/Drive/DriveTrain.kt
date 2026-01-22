@@ -1,96 +1,114 @@
-package org.firstinspires.ftc.teamcode.ILT.Next.Subsystem
+package org.firstinspires.ftc.teamcode.robot.subsystems.drive
 
-import com.bylazar.configurables.annotations.Configurable
-import com.pedropathing.geometry.Pose
 import dev.nextftc.core.commands.Command
 import dev.nextftc.core.subsystems.Subsystem
-import dev.nextftc.extensions.pedro.PedroComponent.Companion.follower
+import dev.nextftc.extensions.pedro.PedroComponent
 import dev.nextftc.extensions.pedro.PedroDriverControlled
+import dev.nextftc.ftc.ActiveOpMode
 import dev.nextftc.ftc.Gamepads
 import dev.nextftc.hardware.impl.Direction
 import dev.nextftc.hardware.impl.IMUEx
-import dev.nextftc.hardware.impl.MotorEx
-import kotlin.math.PI
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Config.RobotConfig
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Enums.Alliance
 
-import kotlin.math.abs
-
-@Configurable
-object DriveTrain: Subsystem {
-
-    val imu = IMUEx("imu", Direction.RIGHT, Direction.UP )
-
-    @JvmField var sensitivity = 1.0
-
-    var currentX = 0.0
-    var currentY = 0.0
-    var currentHeading = 0.0
+import org.firstinspires.ftc.teamcode.robot.data.config.RobotState
 
 
+/**
+ * DriveTrain subsystem.
+ * Handles mecanum drive via Pedro, pose tracking, and zone checking.
+ */
+object DriveTrain : Subsystem {
 
+    // IMU for heading (backup/reset)
+    private lateinit var imu: IMUEx
+
+    // Zone checker
+    private lateinit var zoneChecker: ZoneChecker
+
+    // Initialization flag
+    private var isInitialized = false
+
+    override fun initialize() {
+        try {
+            imu = IMUEx(RobotConfig.Hardware.IMU, Direction.RIGHT, Direction.UP)
+            zoneChecker = ZoneChecker()
+            isInitialized = true
+        } catch (e: Exception) {
+            ActiveOpMode.telemetry.addData("DriveTrain Error", e.message)
+            isInitialized = false
+        }
+    }
+
+    // Pedro handles driving via its default command
     override val defaultCommand: Command
         get() = PedroDriverControlled(
-        Gamepads.gamepad1.leftStickY,
-        Gamepads.gamepad1.leftStickX,
-        Gamepads.gamepad1.rightStickX,
-        false
-    )
-
-
-    override fun periodic() {
-
-        currentX = follower.pose.x
-        currentY = follower.pose.y
-        currentHeading = follower.heading
-
-
-    }
-
-
-    private fun normalizeAngle(angle: Double): Double {
-        var normalized = angle
-        while (normalized > PI) normalized -= 2 * PI
-        while (normalized < -PI) normalized += 2 * PI
-        return normalized
-    }
-
-
-   /* fun PoseInTriangle(p: Pose, a: Pose, b: Pose, c: Pose): Boolean {
-        val det = (b.y - c.y) * (a.x - c.x) + (c.x - b.x) * (a.y - c.y)
-        if (abs(det) < 1e-6) return false
-        val u = ((b.y - c.y) * (p.x - c.x) + (c.x - b.x) * (p.y - c.y)) / det
-        val v = ((c.y - a.y) * (p.x - c.x) + (a.x - c.x) * (p.y - c.y)) / det
-        val w = 1 - u - v
-        return u >= 0 && v >= 0 && w >= 0
-    }
-
-
-    fun inShootZone(): Boolean {
-
-        val obstacle = listOf(Pose(0.0, 115.0), Pose(25.0, 144.0), Pose(0.0, 141.0))
-        val upper = listOf(Pose(0.0, 115.0), Pose(25.0, 144.0), Pose(72.0, 72.0))
-        val lower = listOf(Pose(48.0, 0.0), Pose(72.0, 24.0), Pose(72.0, 0.0))
-
-
-        val hw = 13.0 / 2.0
-        val hl = 13.0 / 2.0
-        val corners = listOf(
-            Pose(currentX - hw, currentY - hl),
-            Pose(currentX + hw, currentY - hl),
-            Pose(currentX + hw, currentY + hl),
-            Pose(currentX - hw, currentY + hl)
+            Gamepads.gamepad1.leftStickY,
+            Gamepads.gamepad1.leftStickX,
+            Gamepads.gamepad1.rightStickX,
+            false  // field centric
         )
 
+    override fun periodic() {
+        if (!isInitialized) return
 
-        fun overlaps(tri: List<Pose>): Boolean {
-            return corners.any { PoseInTriangle(it, tri[0], tri[1], tri[2]) }
+        // Update pose from Pedro follower
+        try {
+            PedroComponent.follower?.let { follower ->
+                RobotState.updatePose(
+                    follower.pose.x,
+                    follower.pose.y,
+                    follower.heading
+                )
+            } ?: run {
+                RobotState.invalidatePose()
+            }
+        } catch (e: Exception) {
+            RobotState.invalidatePose()
+            ActiveOpMode.telemetry.addData("Pose Error", e.message)
         }
 
+        // Update zone status
+        if (RobotState.poseValid) {
+            RobotState.inShootZone = zoneChecker.inShootZone(
+                RobotState.currentX,
+                RobotState.currentY
+            )
 
-        val inUpper = overlaps(upper)
-        val inLower = overlaps(lower)
-        val inObstacle = overlaps(obstacle)
-        return (inUpper || inLower) && !inObstacle
+            // Calculate distance to goal
+            val dx = RobotState.goalX - RobotState.currentX
+            val dy = RobotState.goalY - RobotState.currentY
+            RobotState.distanceToGoalOdometry = kotlin.math.sqrt(dx * dx + dy * dy)
+        }
+
+        // Telemetry
+        ActiveOpMode.telemetry.run {
+            addData("Pose Valid", RobotState.poseValid)
+            addData("Position", "(%.1f, %.1f)".format(RobotState.currentX, RobotState.currentY))
+            addData("Heading", "%.1f°".format(Math.toDegrees(RobotState.currentHeading)))
+            addData("In Shoot Zone", RobotState.inShootZone)
+            addData("Distance to Goal", "%.1f".format(RobotState.distanceToGoalOdometry))
+        }
     }
 
-    */
+    /**
+     * Reset the IMU heading.
+     */
+    fun resetImu() {
+        if (isInitialized) {
+            imu.zero()
+        }
+    }
+
+    /**
+     * Set the alliance (affects goal position and zone checking).
+     */
+    fun setAlliance(alliance: Alliance) {
+        RobotConfig.alliance = alliance
+    }
+
+    /**
+     * Get the IMU heading (for backup/verification).
+     */
+
 }

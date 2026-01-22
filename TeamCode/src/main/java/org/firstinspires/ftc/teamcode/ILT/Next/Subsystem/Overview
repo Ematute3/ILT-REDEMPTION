@@ -1,0 +1,29 @@
+robot/
+├── data/
+│   ├── enums/
+│   │   ├── Alliance.kt         # Alliance enum (RED/BLUE)
+│   │   └── RobotEnums.kt       # All mode enums (OuttakeMode, TurretMode, etc.)
+│   └── config/
+│       ├── RobotConfig.kt      # All tunable constants and hardware names
+│       ├── RobotState.kt       # Centralized robot state (single source of truth)
+│       └── AimbotTable.kt      # Distance-based lookup table for hood/flywheel
+├── subsystems/
+│   ├── drive/
+│   │   ├── DriveTrain.kt       # Main drivetrain subsystem
+│   │   ├── HeadingLock.kt      # Heading lock drive command
+│   │   └── ZoneChecker.kt      # Field zone calculations
+│   ├── shooter/
+│   │   ├── FlyWheel.kt         # Flywheel velocity control
+│   │   ├── Hood.kt             # Hood position control
+│   │   ├── Turret.kt           # Turret aiming (relative & absolute encoder)
+│   │   └── OuttakeController.kt # Coordinates all shooter subsystems
+│   ├── intake/
+│   │   ├── Intake.kt           # Ball intake motors
+│   │   └── Gate.kt             # Ball gate servo
+│   └── vision/
+│       └── LimelightVision.kt  # Limelight target detection & distance
+├── commands/
+│   ├── WaitForFlywheelSpeed.kt # Non-blocking flywheel wait command
+│   └── ShootCommands.kt        # Pre-built shooting sequences
+└── opmodes/
+    └── MainTeleOp.kt           # Example TeleOp showing usage
