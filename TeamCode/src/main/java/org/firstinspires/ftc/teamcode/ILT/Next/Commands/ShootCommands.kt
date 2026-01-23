@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.ILT.Next.Commands
 
 import dev.nextftc.core.commands.Command
 import dev.nextftc.core.commands.delays.Delay
+import dev.nextftc.core.commands.groups.ParallelGroup
 import dev.nextftc.core.commands.groups.SequentialGroup
 import dev.nextftc.core.commands.utility.InstantCommand
 import dev.nextftc.ftc.ActiveOpMode
@@ -27,6 +28,16 @@ object ShootCommands {
          //   FlyWheel.stop,
             Intake.stop
         )
+    val shoot: Command
+        get() = SequentialGroup(
+            FlyWheel.spin,
+            Intake.feed,
+            Delay(RobotConfig.Timing.FEED_DURATION_MS.milliseconds),
+            //   FlyWheel.stop,
+            Intake.stop
+
+        )
+
 
 
     val fullAutoShoot: Command

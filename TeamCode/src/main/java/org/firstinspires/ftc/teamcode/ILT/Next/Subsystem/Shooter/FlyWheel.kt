@@ -53,7 +53,7 @@ object FlyWheel : Subsystem {
         val power = controller.calculate(
             KineticState(
                 fly1.motor.currentPosition.toDouble(),
-                fly1.velocity
+                targetVelocity
             )
         )
 
@@ -103,7 +103,7 @@ object FlyWheel : Subsystem {
     /** Stop the flywheel */
     fun stop() {
         targetVelocity = 0.0
-        controller.goal = KineticState(0.0, 0.0)
+
     }
 
     // ==================== COMMANDS ====================
@@ -112,6 +112,10 @@ object FlyWheel : Subsystem {
     val spinFull = InstantCommand {
         fly1.power = 1.0
         fly2.power = 1.0
+    }
+    val spin = InstantCommand{
+        targetVelocity = 1500.0
+
     }
 
     /** Command to stop motors directly */
