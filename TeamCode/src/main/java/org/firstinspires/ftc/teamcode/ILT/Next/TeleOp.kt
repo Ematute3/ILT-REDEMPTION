@@ -7,6 +7,8 @@ import dev.nextftc.extensions.pedro.PedroComponent
 import dev.nextftc.ftc.NextFTCOpMode
 import dev.nextftc.ftc.components.BulkReadComponent
 import dev.nextftc.bindings.button
+import dev.nextftc.control.KineticState
+import dev.nextftc.core.commands.Command
 import dev.nextftc.extensions.pedro.PedroDriverControlled
 import dev.nextftc.ftc.Gamepads
 import org.firstinspires.ftc.teamcode.ILT.Next.Commands.ShootCommands
@@ -57,38 +59,29 @@ class MainTeleOp : NextFTCOpMode() {
         driverControlled.schedule()
 
         bindDriverControls()
-        bindOperatorControls()
+
     }
 
     private fun bindDriverControls() {
         // Intake Toggle
-        button { gamepad1.right_bumper }
+        button { gamepad1.left_trigger > 0.1f }
             .whenTrue(Intake.run)
             .whenFalse(Intake.stop)
 
         // Reverse Intake
-        button { gamepad1.left_trigger > 0.1f }
-            .whenTrue(Intake.reverse)
+        button { gamepad1.left_bumper }
+            .whenTrue(Intake.run)
             .whenFalse(Intake.stop)
+        button { gamepad1.right_trigger > 0.5f}
+            .whenTrue(FlyWheel.spin)
+        button{ gamepad1.right_bumper}
+            .whenTrue { ShootCommands.shoot }
     }
 
-    private fun bindOperatorControls() {
-        // Manual aim distance adjustment
-        button { gamepad2.dpad_up }.whenBecomesTrue(OuttakeController.aimUp)
-        button { gamepad2.dpad_down }.whenBecomesTrue(OuttakeController.aimDown)
-
-        // Mode selection - Updates RobotState, which OuttakeController monitors
-        button { gamepad2.x }.whenBecomesTrue(OuttakeController.autoLimelightMode)
-        button { gamepad2.y }.whenBecomesTrue(OuttakeController.autoOdometryMode)
-        button { gamepad2.back }.whenBecomesTrue(OuttakeController.idleMode)
-
-        // Shooting sequence
-        button { gamepad2.a }.whenBecomesTrue { ShootCommands.fullAutoShoot.schedule() }
-        button { gamepad2.b }.whenBecomesTrue { ShootCommands.emergencyStop.schedule() }
-    }
 
     override fun onUpdate() {
         // 1. ==================== TURRET MANUAL OVERRIDE ====================
+
         val turretInput = gamepad2.right_stick_x.toDouble()
         val isManualNudging = abs(turretInput) > 0.1 || gamepad2.left_bumper || gamepad2.right_bumper
 
