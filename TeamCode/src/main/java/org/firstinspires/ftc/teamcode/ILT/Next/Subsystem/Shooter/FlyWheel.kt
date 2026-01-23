@@ -12,119 +12,117 @@ import org.firstinspires.ftc.teamcode.robot.data.config.RobotState
 import kotlin.math.abs
 
 /**
- * Flywheel subsystem for ball shooting.
- * Uses velocity PID control with feedforward.
+ * FlyWheel subsystem - uses NextFTC controlSystem for velocity control.
+ *
+ * Based on NextControl documentation example.
  */
 object FlyWheel : Subsystem {
 
-    private lateinit var motor1: MotorEx
-    private lateinit var motor2: MotorEx
+    // ==================== HARDWARE ====================
+    val fly1 = MotorEx(RobotConfig.Hardware.FLYWHEEL_1).floatMode()
+    val fly2 = MotorEx(RobotConfig.Hardware.FLYWHEEL_2).reversed().floatMode()
 
-    private var controller = controlSystem {
+    // ==================== CONTROL SYSTEM ====================
+    var controller = controlSystem {
         velPid(RobotConfig.FlywheelConfig.pid)
         basicFF(RobotConfig.FlywheelConfig.feedforward)
     }
 
-    private var targetVelocity = 0.0
-    private var manualMode = false
-    private var isInitialized = false
+    // ==================== STATE ====================
+    @JvmField
+    var targetVelocity = 0.0
 
+    var motorRpm: Double = 0.0
+
+    // ==================== INITIALIZATION ====================
     override fun initialize() {
-        try {
-            motor1 = MotorEx(RobotConfig.Hardware.FLYWHEEL_1)
-            motor2 = MotorEx(RobotConfig.Hardware.FLYWHEEL_2).reversed()
-            isInitialized = true
-        } catch (e: Exception) {
-            ActiveOpMode.telemetry.addData("FlyWheel Error", e.message)
-            isInitialized = false
-        }
+        // Safety: Flywheels should FLOAT to stop, not BRAKE
+
+
+        // Initialize goal to stopped
+        controller.goal = KineticState(0.0, 0.0)
     }
 
+    // ==================== PERIODIC ====================
     override fun periodic() {
-        if (!isInitialized) return
+        // 1. Update sensor data
+        motorRpm = fly1.velocity * 60.0 / RobotConfig.FlywheelConfig.MOTOR_TICKS_PER_REV
 
-        // Update state
-        RobotState.flywheelVelocity = motor1.velocity
-        RobotState.targetFlywheelVelocity = targetVelocity
+        // 2. Calculate power using the EXACT pattern from NextControl docs:
+        // controller.calculate(KineticState(position, velocity))
+        val power = controller.calculate(
+            KineticState(
+                fly1.motor.currentPosition.toDouble(),
+                fly1.velocity
+            )
+        )
+
+        // 3. Apply power to motors
+        fly1.power = power
+        fly2.power = power
+
+        // 4. Update Global Robot State
+        RobotState.flywheelVelocity = fly1.velocity
         RobotState.flywheelAtSpeed = isAtTargetVelocity()
+        RobotState.targetFlywheelVelocity = targetVelocity
 
-        // Run control loop (unless in manual mode)
-        if (!manualMode) {
-            val currentState = KineticState(motor1.currentPosition, motor1.velocity)
-
-            controller.goal = if (RobotState.flywheelOn) {
-                KineticState(0.0, targetVelocity)
-            } else {
-                KineticState(0.0, 0.0)
-            }
-
-            val power = controller.calculate(currentState)
-            motor1.power = power
-            motor2.power = power
-        }
-
-        // Telemetry
+        // 5. Telemetry
         ActiveOpMode.telemetry.run {
-            addData("Flywheel On", RobotState.flywheelOn)
-            addData("Target Velocity", "%.0f".format(targetVelocity))
-            addData("Current Velocity", "%.0f".format(motor1.velocity))
-            addData("At Speed", RobotState.flywheelAtSpeed)
-            addData("RPM", "%.0f".format(motor1.velocity * 60.0 / RobotConfig.FlywheelConfig.MOTOR_TICKS_PER_REV))
+            addData("--- FlyWheel ---", "")
+            addData("Target Vel", "%.0f".format(targetVelocity))
+            addData("Actual Vel", "%.0f".format(fly1.velocity))
+            addData("RPM", "%.0f".format(motorRpm))
+            addData("Power", "%.2f".format(power))
+            addData("At Speed", isAtTargetVelocity())
         }
     }
 
-    /**
-     * Check if flywheel is at target velocity.
-     */
+    // ==================== HELPER FUNCTIONS ====================
+
     fun isAtTargetVelocity(): Boolean {
-        return RobotState.flywheelOn &&
-                abs(motor1.velocity - targetVelocity) < RobotConfig.FlywheelConfig.velocityTolerance
+        return abs(fly1.velocity - targetVelocity) < RobotConfig.FlywheelConfig.velocityTolerance
     }
 
-    /**
-     * Set target velocity (ticks/sec).
-     */
+    fun getCurrentVelocity(): Double = fly1.velocity
+
+    fun getRPM(): Double = motorRpm
+
+    // ==================== CONTROL FUNCTIONS ====================
+
+    /** Set target velocity and update controller goal */
     fun setTargetVelocity(velocity: Double) {
         targetVelocity = velocity
+        controller.goal = KineticState(0.0, velocity)
     }
 
-    /**
-     * Get current velocity (ticks/sec).
-     */
-    fun getVelocity(): Double = if (isInitialized) motor1.velocity else 0.0
+    /** Spin up to specified velocity */
+    fun spinUp(velocity: Double) {
+        setTargetVelocity(velocity)
+    }
 
-    /**
-     * Get current RPM.
-     */
-    fun getRPM(): Double = getVelocity() * 60.0 / RobotConfig.FlywheelConfig.MOTOR_TICKS_PER_REV
+    /** Stop the flywheel */
+    fun stop() {
+        targetVelocity = 0.0
+        controller.goal = KineticState(0.0, 0.0)
+    }
 
     // ==================== COMMANDS ====================
 
-    val spin = InstantCommand {
-        manualMode = false
-        RobotState.flywheelOn = true
+    /** Command to spin at full power (bypasses PID) */
+    val spinFull = InstantCommand {
+        fly1.power = 1.0
+        fly2.power = 1.0
     }
 
-    val stop = InstantCommand {
-        manualMode = false
-        RobotState.flywheelOn = false
+    /** Command to stop motors directly */
+    val stopMotors = InstantCommand {
+        fly1.power = 0.0
+        fly2.power = 0.0
     }
 
-    val backOutSlow = InstantCommand {
-        manualMode = true
-        RobotState.flywheelOn = false
-        if (isInitialized) {
-            motor1.power = -0.5
-            motor2.power = -0.5
-        }
-    }
-
-    val backOut = InstantCommand {
-        manualMode = true
-        RobotState.flywheelOn = false
-        if (isInitialized) {
-            motor1.power = -1.0
-            motor2.power = -1.0
-        }
+    /** Command to reverse (clear jams) */
+    val reverse = InstantCommand {
+        fly1.power = -0.5
+        fly2.power = -0.5
     }
 }

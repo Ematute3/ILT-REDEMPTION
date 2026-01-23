@@ -1,5 +1,4 @@
-package org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Enums
-
+package org.firstinspires.ftc.teamcode.robot.data.enums
 
 /**
  * Controls how hood angle and flywheel speed are determined
@@ -12,15 +11,16 @@ enum class OuttakeMode {
 }
 
 /**
- * Controls how the turret aims
+ * Controls how the turret aims.
+ *
+ * LIMELIGHT: Uses camera TX to track target (works without homing)
+ * ODOMETRY: Uses robot position to calculate aim (REQUIRES HOMING FIRST!)
  */
-// change to turret mode once code finished
 enum class TurretMode {
     IDLE,              // Turret stationary
     MANUAL,            // Direct joystick control
-    LIMELIGHT,         // Track target using Limelight tx
-    ODOMETRY_RELATIVE, // Aim at goal using motor encoder + odometry
-    ODOMETRY_ABSOLUTE  // Aim at goal using absolute encoder + odometry
+    LIMELIGHT,         // Track target using Limelight TX
+    ODOMETRY           // Aim using robot position (requires homing!)
 }
 
 /**

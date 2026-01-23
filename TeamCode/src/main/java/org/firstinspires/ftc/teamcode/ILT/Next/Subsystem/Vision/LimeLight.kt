@@ -5,8 +5,9 @@ import com.qualcomm.hardware.limelightvision.Limelight3A
 import dev.nextftc.core.subsystems.Subsystem
 import dev.nextftc.ftc.ActiveOpMode
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Config.RobotConfig
-import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Enums.Motif
+
 import org.firstinspires.ftc.teamcode.robot.data.config.RobotState
+import org.firstinspires.ftc.teamcode.robot.data.enums.Motif
 
 import kotlin.math.PI
 import kotlin.math.abs

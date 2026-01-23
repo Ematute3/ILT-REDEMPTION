@@ -1,114 +1,105 @@
 package org.firstinspires.ftc.teamcode.robot.subsystems.drive
 
-import dev.nextftc.core.commands.Command
 import dev.nextftc.core.subsystems.Subsystem
 import dev.nextftc.extensions.pedro.PedroComponent
 import dev.nextftc.extensions.pedro.PedroDriverControlled
 import dev.nextftc.ftc.ActiveOpMode
 import dev.nextftc.ftc.Gamepads
-import dev.nextftc.hardware.impl.Direction
-import dev.nextftc.hardware.impl.IMUEx
-import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Config.RobotConfig
-import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Enums.Alliance
-
 import org.firstinspires.ftc.teamcode.robot.data.config.RobotState
-
+import kotlin.math.sqrt
 
 /**
  * DriveTrain subsystem.
- * Handles mecanum drive via Pedro, pose tracking, and zone checking.
+ *
+ * IMPORTANT: Pedro driving is handled by calling driverControlled() in periodic().
+ * This is NOT done via defaultCommand - we must explicitly call it every loop!
  */
 object DriveTrain : Subsystem {
 
-    // IMU for heading (backup/reset)
-    private lateinit var imu: IMUEx
-
-    // Zone checker
-    private lateinit var zoneChecker: ZoneChecker
-
-    // Initialization flag
     private var isInitialized = false
 
+    // The Pedro driver controlled command - created once, called every loop
+
+
+    // ==================== INITIALIZATION ====================
     override fun initialize() {
         try {
-            imu = IMUEx(RobotConfig.Hardware.IMU, Direction.RIGHT, Direction.UP)
-            zoneChecker = ZoneChecker()
+            // Create the driver controlled command
+            // This uses Gamepads which wraps the gamepad inputs
+
+
             isInitialized = true
+            ActiveOpMode.telemetry.addData("DriveTrain", "Initialized OK")
         } catch (e: Exception) {
             ActiveOpMode.telemetry.addData("DriveTrain Error", e.message)
             isInitialized = false
         }
     }
 
-    // Pedro handles driving via its default command
-    override val defaultCommand: Command
-        get() = PedroDriverControlled(
-            Gamepads.gamepad1.leftStickY,
-            Gamepads.gamepad1.leftStickX,
-            Gamepads.gamepad1.rightStickX,
-            false  // field centric
-        )
 
+    // ==================== PERIODIC - MUST CALL driverControlled() HERE ====================
     override fun periodic() {
-        if (!isInitialized) return
+
+        // THIS IS THE KEY LINE - actually run the Pedro driving!
+        // The () invokes the command's update logic
 
         // Update pose from Pedro follower
-        try {
-            PedroComponent.follower?.let { follower ->
-                RobotState.updatePose(
-                    follower.pose.x,
-                    follower.pose.y,
-                    follower.heading
-                )
-            } ?: run {
-                RobotState.invalidatePose()
+        val follower = PedroComponent.follower
+
+        if (follower != null) {
+            try {
+                val pose = follower.pose
+                RobotState.currentX = pose.x
+                RobotState.currentY = pose.y
+                RobotState.currentHeading = pose.heading
+                RobotState.poseValid = true
+
+                // Calculate distance to goal
+                val dx = RobotState.goalX - pose.x
+                val dy = RobotState.goalY - pose.y
+                RobotState.distanceToGoalOdometry = sqrt(dx * dx + dy * dy)
+            } catch (e: Exception) {
+                RobotState.poseValid = false
             }
-        } catch (e: Exception) {
-            RobotState.invalidatePose()
-            ActiveOpMode.telemetry.addData("Pose Error", e.message)
-        }
-
-        // Update zone status
-        if (RobotState.poseValid) {
-            RobotState.inShootZone = zoneChecker.inShootZone(
-                RobotState.currentX,
-                RobotState.currentY
-            )
-
-            // Calculate distance to goal
-            val dx = RobotState.goalX - RobotState.currentX
-            val dy = RobotState.goalY - RobotState.currentY
-            RobotState.distanceToGoalOdometry = kotlin.math.sqrt(dx * dx + dy * dy)
+        } else {
+            RobotState.poseValid = false
         }
 
         // Telemetry
         ActiveOpMode.telemetry.run {
+            addData("=== DRIVETRAIN ===", "")
             addData("Pose Valid", RobotState.poseValid)
-            addData("Position", "(%.1f, %.1f)".format(RobotState.currentX, RobotState.currentY))
-            addData("Heading", "%.1f°".format(Math.toDegrees(RobotState.currentHeading)))
-            addData("In Shoot Zone", RobotState.inShootZone)
-            addData("Distance to Goal", "%.1f".format(RobotState.distanceToGoalOdometry))
+            if (RobotState.poseValid) {
+                addData("X", "%.1f".format(RobotState.currentX))
+                addData("Y", "%.1f".format(RobotState.currentY))
+                addData("Heading", "%.1f°".format(Math.toDegrees(RobotState.currentHeading)))
+                addData("Dist to Goal", "%.1f\"".format(RobotState.distanceToGoalOdometry))
+            }
         }
     }
 
-    /**
-     * Reset the IMU heading.
-     */
-    fun resetImu() {
-        if (isInitialized) {
-            imu.zero()
-        }
+    // ==================== HELPER FUNCTIONS ====================
+
+    /*fun resetPose(x: Double, y: Double, heading: Double) {
+        PedroComponent.follower?.pose = com.pedropathing.localization.Pose(x, y, heading)
     }
 
-    /**
-     * Set the alliance (affects goal position and zone checking).
      */
-    fun setAlliance(alliance: Alliance) {
-        RobotConfig.alliance = alliance
+
+    /**
+     * Switch between robot centric and field centric driving.
+     * Must recreate the command with new setting.
+     */
+   /* fun setRobotCentric(robotCentric: Boolean) {
+        if (!isInitialized) return
+
+        driverControlled = PedroDriverControlled(
+            Gamepads.gamepad1.leftStickY,
+            Gamepads.gamepad1.leftStickX,
+            Gamepads.gamepad1.rightStickX,
+            robotCentric
+        )
     }
 
-    /**
-     * Get the IMU heading (for backup/verification).
-     */
-
+    */
 }

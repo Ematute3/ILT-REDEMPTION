@@ -6,8 +6,10 @@ import dev.nextftc.ftc.ActiveOpMode
 import dev.nextftc.hardware.controllable.MotorGroup
 import dev.nextftc.hardware.impl.MotorEx
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Config.RobotConfig
-import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Enums.IntakeState
+
 import org.firstinspires.ftc.teamcode.robot.data.config.RobotState
+import org.firstinspires.ftc.teamcode.robot.data.enums.IntakeState
+
 
 
 /**
@@ -24,7 +26,7 @@ object Intake : Subsystem {
 
     override fun initialize() {
         try {
-
+            intakeMotor = MotorEx(RobotConfig.Hardware.INTAKE)
 
             isInitialized = true
         } catch (e: Exception) {

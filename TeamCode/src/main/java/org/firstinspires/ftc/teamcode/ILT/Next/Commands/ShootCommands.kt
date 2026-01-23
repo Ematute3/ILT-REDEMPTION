@@ -14,30 +14,21 @@ import org.firstinspires.ftc.teamcode.robot.subsystems.shooter.Hood
 import kotlin.time.Duration.Companion.milliseconds
 
 
-/**
- * Shooting command sequences.
- * These are pre-built command groups for common shooting operations.
- */
+
 object ShootCommands {
 
-    /**
-     * Simple shoot sequence - assumes aiming is already done.
-     * Spins up, waits for speed, feeds, stops.
-     */
+
     val simpleShoot: Command
         get() = SequentialGroup(
-            FlyWheel.spin,
+           // FlyWheel.spin,
             WaitForFlywheelSpeed(),
             Intake.feed,
             Delay(RobotConfig.Timing.FEED_DURATION_MS.milliseconds),
-            FlyWheel.stop,
+         //   FlyWheel.stop,
             Intake.stop
         )
 
-    /**
-     * Full auto shoot sequence.
-     * Sets aim values, spins up, waits, feeds, stops.
-     */
+
     val fullAutoShoot: Command
         get() = SequentialGroup(
             // Set aim values based on odometry distance
@@ -55,7 +46,7 @@ object ShootCommands {
             },
 
             // Spin up
-            FlyWheel.spin,
+           // FlyWheel.spin,
 
             // Wait for speed
             WaitForFlywheelSpeed(),
@@ -65,7 +56,7 @@ object ShootCommands {
             Delay(RobotConfig.Timing.FEED_DURATION_MS.milliseconds),
 
             // Stop
-            FlyWheel.stop,
+          //  FlyWheel.stop,
             Intake.stop
         )
 
@@ -90,11 +81,11 @@ object ShootCommands {
                 }
             },
 
-            FlyWheel.spin,
+          //  FlyWheel.spin,
             WaitForFlywheelSpeed(),
             Intake.feed,
             Delay(RobotConfig.Timing.FEED_DURATION_MS.milliseconds),
-            FlyWheel.stop,
+           // FlyWheel.stop,
             Intake.stop
         )
 
@@ -113,11 +104,11 @@ object ShootCommands {
                 }
             },
 
-            FlyWheel.spin,
+            //FlyWheel.spin,
             WaitForFlywheelSpeed(),
             Intake.feed,
             Delay(RobotConfig.Timing.FEED_DURATION_MS.milliseconds),
-            FlyWheel.stop,
+           // FlyWheel.stop,
             Intake.stop
         )
     }
@@ -127,7 +118,7 @@ object ShootCommands {
      */
     val emergencyStop: Command
         get() = SequentialGroup(
-            FlyWheel.stop,
+           // FlyWheel.stop,
             Intake.stop
         )
 }

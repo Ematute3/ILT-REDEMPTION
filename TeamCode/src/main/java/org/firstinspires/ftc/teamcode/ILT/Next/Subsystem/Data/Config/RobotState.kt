@@ -2,12 +2,7 @@ package org.firstinspires.ftc.teamcode.robot.data.config
 
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Config.RobotConfig
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Enums.Alliance
-import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Enums.IntakeState
-import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Enums.Motif
-import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Enums.OuttakeMode
-import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Enums.ShootMode
-import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Enums.TurretMode
-
+import org.firstinspires.ftc.teamcode.robot.data.enums.*
 
 /**
  * Centralized robot state.
@@ -18,13 +13,9 @@ object RobotState {
 
     // ==================== POSE STATE ====================
     var currentX: Double = 0.0
-        private set
     var currentY: Double = 0.0
-        private set
     var currentHeading: Double = 0.0
-        private set
     var poseValid: Boolean = false
-        private set
 
     fun updatePose(x: Double, y: Double, heading: Double) {
         currentX = x
@@ -58,9 +49,9 @@ object RobotState {
     var flywheelVelocity: Double = 0.0
     var targetFlywheelVelocity: Double = 0.0
 
-    var turretYaw: Double = 0.0
-    var turretAbsoluteYaw: Double = 0.0
-    var turretAligned: Boolean = false
+    var turretYaw: Double = 0.0       // Current turret angle from motor encoder
+    var turretAligned: Boolean = false // True when turret is aimed at target
+    var turretHomed: Boolean = false   // True after homing sequence completes
 
     var hoodPosition: Double = 0.0
 

@@ -30,7 +30,7 @@ class WaitForFlywheelSpeed(
         val elapsed = System.currentTimeMillis() - startTime
         ActiveOpMode.telemetry.run {
             addData("Flywheel Wait", "%.1fs / %.1fs".format(elapsed / 1000.0, timeoutMs / 1000.0))
-            addData("Current", "%.0f".format(FlyWheel.getVelocity()))
+            addData("Current", "%.0f".format(FlyWheel.getCurrentVelocity()))
             addData("At Speed", FlyWheel.isAtTargetVelocity())
         }
     }

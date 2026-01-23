@@ -1,11 +1,9 @@
 package org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Config
 
-
 import com.bylazar.configurables.annotations.Configurable
 import dev.nextftc.control.feedback.PIDCoefficients
 import dev.nextftc.control.feedforward.BasicFeedforwardParameters
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Enums.Alliance
-
 import kotlin.math.PI
 
 /**
@@ -39,7 +37,7 @@ object RobotConfig {
         const val FLYWHEEL_1 = "fly1"
         const val FLYWHEEL_2 = "fly2"
         const val TURRET_MOTOR = "turret"
-        const val TURRET_ENCODER = "encoder"
+        const val TURRET_LIMIT_SWITCH = "turretLimit"  // Touch sensor for homing
         const val HOOD_SERVO = "hood"
 
         // Intake hardware
@@ -48,13 +46,13 @@ object RobotConfig {
         const val GATE_SERVO = "gate"
 
         // Vision
-        const val LIMELIGHT = "limelight"
+        const val LIMELIGHT = "ll"
     }
 
     // ==================== FLYWHEEL CONFIG ====================
     object FlywheelConfig {
-        @JvmField var pid = PIDCoefficients(0.0033, 0.0, 0.0)
-        @JvmField var feedforward = BasicFeedforwardParameters(1.0 / 2400.0, 0.0, 0.03)
+        @JvmField var pid = PIDCoefficients(0.006, 0.0, 0.0)
+        @JvmField var feedforward = BasicFeedforwardParameters(1.0 / 2500.0, 0.0, 0.07)
 
         const val MOTOR_TICKS_PER_REV = 28.0
         const val WHEEL_DIAMETER_IN = 6.0
@@ -75,8 +73,8 @@ object RobotConfig {
         const val MIN_ANGLE = -PI
         const val MAX_ANGLE = PI
 
-        @JvmField var manualPowerSlow = 0.2
-        @JvmField var manualPowerFast = 0.6
+        @JvmField var manualPowerSlow = 0.5
+        @JvmField var manualPowerFast = 1.0
     }
 
     // ==================== HOOD CONFIG ====================
