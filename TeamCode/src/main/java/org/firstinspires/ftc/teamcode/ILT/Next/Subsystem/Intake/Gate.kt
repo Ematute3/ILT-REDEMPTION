@@ -12,22 +12,16 @@ import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Config.RobotConfig
  */
 object Gate : Subsystem {
 
-    private lateinit var servo: ServoEx
-    private var position = RobotConfig.GateConfig.closedPosition
-    private var isInitialized = false
+    private var servo = ServoEx(RobotConfig.Hardware.GATE_SERVO)
+    private var position = RobotConfig.GateConfig.openPosition
+
 
     override fun initialize() {
-        try {
-            servo = ServoEx(RobotConfig.Hardware.GATE_SERVO)
-            isInitialized = true
-        } catch (e: Exception) {
-            ActiveOpMode.telemetry.addData("Gate Error", e.message)
-            isInitialized = false
-        }
+
     }
 
     override fun periodic() {
-        if (!isInitialized) return
+
         servo.position = position
     }
 

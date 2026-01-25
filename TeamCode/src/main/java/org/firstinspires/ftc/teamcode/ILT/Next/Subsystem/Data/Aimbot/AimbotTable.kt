@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Aimbot
 
+
+
 /**
  * Lookup table for hood position and flywheel velocity based on distance.
  * Values are tuned empirically during testing.
@@ -30,37 +32,36 @@ object AimbotTable {
 
     /**
      * Get aim values for a given distance.
-     * Returns Pair(hoodPosition, flywheelVelocity) or null if out of range.
-     *
-     * Uses linear interpolation between known values.
+     * Returns Pair(hoodPosition, flywheelVelocity).
+     * * Uses linear interpolation between known values.
+     * Fixed: Clamps distance to range to prevent null returns.
      */
-    fun getValues(distance: Double): Pair<Double, Double>? {
-        if (distance < distances.first() || distance > distances.last()) {
-            return null
-        }
+    fun getValues(distance: Double): Pair<Double, Double> {
+        // Safety: Clamp the distance so it never falls outside our defined keys (12 to 144)
+        val clampedDist = distance.coerceIn(distances.first().toDouble(), distances.last().toDouble())
 
         // Find surrounding distances for interpolation
         var lowerDist = distances.first()
         var upperDist = distances.last()
 
         for (d in distances) {
-            if (d <= distance) lowerDist = d
-            if (d >= distance) {
+            if (d <= clampedDist) lowerDist = d
+            if (d >= clampedDist) {
                 upperDist = d
                 break
             }
         }
 
-        // Exact match
+        // Exact match or clamped to edge
         if (lowerDist == upperDist) {
-            return lookupTable[lowerDist]
+            return lookupTable[lowerDist]!!
         }
 
         // Interpolate
-        val lowerVals = lookupTable[lowerDist] ?: return null
-        val upperVals = lookupTable[upperDist] ?: return null
+        val lowerVals = lookupTable[lowerDist]!!
+        val upperVals = lookupTable[upperDist]!!
 
-        val t = (distance - lowerDist) / (upperDist - lowerDist)
+        val t = (clampedDist - lowerDist) / (upperDist - lowerDist)
 
         val hood = lowerVals.first + t * (upperVals.first - lowerVals.first)
         val velocity = lowerVals.second + t * (upperVals.second - lowerVals.second)
@@ -69,21 +70,22 @@ object AimbotTable {
     }
 
     /**
-     * Get hood position for distance (with offset applied)
+     * Get hood position for distance (with optional offset applied)
      */
-    fun getHoodPosition(distance: Double, offset: Double = 0.06): Double? {
-        return getValues(distance)?.first?.plus(offset)?.coerceIn(0.0, 1.0)
+    fun getHoodPosition(distance: Double, offset: Double = 0.06): Double {
+        return (getValues(distance).first + offset).coerceIn(0.0, 1.0)
     }
 
     /**
-     * Get flywheel velocity for distance (with offset applied)
+     * Get flywheel velocity for distance (with optional offset applied)
      */
-    fun getFlywheelVelocity(distance: Double, offset: Double = 100.0): Double? {
-        return getValues(distance)?.second?.plus(offset)
+    fun getFlywheelVelocity(distance: Double, offset: Double = 100.0): Double {
+        return getValues(distance).second + offset
     }
 
     /**
      * Snap to nearest valid distance (multiples of 12)
+     * Used for manual operator adjustments.
      */
     fun snapToValidDistance(distance: Int): Int {
         val snapped = (distance / 12) * 12

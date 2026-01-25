@@ -12,22 +12,14 @@ import org.firstinspires.ftc.teamcode.robot.data.config.RobotState
  */
 object Hood : Subsystem {
 
-    private lateinit var servo: ServoEx
-    private var isInitialized = false
+    private var servo = ServoEx(RobotConfig.Hardware.HOOD_SERVO)
+
 
     override fun initialize() {
-        try {
-            servo = ServoEx(RobotConfig.Hardware.HOOD_SERVO)
-            isInitialized = true
-        } catch (e: Exception) {
-            ActiveOpMode.telemetry.addData("Hood Error", e.message)
-            isInitialized = false
-        }
+
     }
 
     override fun periodic() {
-        if (!isInitialized) return
-
         // Apply clamped position
         servo.position = RobotState.hoodPosition.coerceIn(
             RobotConfig.HoodConfig.MIN_POSITION,
@@ -62,6 +54,12 @@ object Hood : Subsystem {
     val moveDown = InstantCommand {
         RobotState.hoodPosition = (RobotState.hoodPosition + RobotConfig.HoodConfig.adjustStep)
             .coerceIn(RobotConfig.HoodConfig.MIN_POSITION, RobotConfig.HoodConfig.MAX_POSITION)
+    }
+    val up = InstantCommand{
+        servo.position = 1.0
+    }
+    val down = InstantCommand{
+        servo.position = 0.0
     }
 
     val reset = InstantCommand {

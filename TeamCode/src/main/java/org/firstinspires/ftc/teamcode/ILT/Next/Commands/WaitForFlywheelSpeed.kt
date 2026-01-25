@@ -1,46 +1,37 @@
 package org.firstinspires.ftc.teamcode.ILT.Next.Commands
 
 import dev.nextftc.core.commands.Command
+import dev.nextftc.core.commands.delays.Delay
+import dev.nextftc.core.commands.groups.SequentialGroup
+import dev.nextftc.core.commands.utility.InstantCommand
 import dev.nextftc.ftc.ActiveOpMode
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Aimbot.AimbotTable
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Config.RobotConfig
-
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Intake.Intake
+import org.firstinspires.ftc.teamcode.robot.data.config.RobotState
+import org.firstinspires.ftc.teamcode.robot.subsystems.intake.Gate
 import org.firstinspires.ftc.teamcode.robot.subsystems.shooter.FlyWheel
+import org.firstinspires.ftc.teamcode.robot.subsystems.shooter.Hood
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
- * Non-blocking command that waits for the flywheel to reach target velocity.
- * Finishes when flywheel is at speed OR timeout is exceeded.
+ * COMMAND: Waits for flywheel to reach target RPM
  */
 class WaitForFlywheelSpeed(
     private val timeoutMs: Long = RobotConfig.Timing.FLYWHEEL_SPINUP_TIMEOUT_MS
 ) : Command() {
-
     private var startTime = 0L
 
     override val isDone: Boolean
-        get() {
-            val elapsed = System.currentTimeMillis() - startTime
-            return FlyWheel.isAtTargetVelocity() || elapsed > timeoutMs
-        }
+        get() = FlyWheel.isAtTargetVelocity() || (System.currentTimeMillis() - startTime) > timeoutMs
 
-    override fun start() {
-        startTime = System.currentTimeMillis()
-    }
+    override fun start() { startTime = System.currentTimeMillis() }
 
     override fun update() {
-        val elapsed = System.currentTimeMillis() - startTime
-        ActiveOpMode.telemetry.run {
-            addData("Flywheel Wait", "%.1fs / %.1fs".format(elapsed / 1000.0, timeoutMs / 1000.0))
-            addData("Current", "%.0f".format(FlyWheel.getCurrentVelocity()))
-            addData("At Speed", FlyWheel.isAtTargetVelocity())
-        }
-    }
-
-    override fun stop(interrupted: Boolean) {
-        if (interrupted) {
-            ActiveOpMode.telemetry.addData("Flywheel Wait", "Interrupted")
-        } else {
-            ActiveOpMode.telemetry.addData("Flywheel Wait",
-                if (FlyWheel.isAtTargetVelocity()) "Ready!" else "Timed out")
-        }
+        ActiveOpMode.telemetry.addData("Flywheel Wait", "%.0f RPM".format(FlyWheel.getCurrentVelocity()))
     }
 }
+
+/**
+ * OBJECT: Collection of firing sequences
+ */

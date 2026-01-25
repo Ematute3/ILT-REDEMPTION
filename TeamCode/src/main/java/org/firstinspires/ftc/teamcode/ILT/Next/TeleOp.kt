@@ -1,24 +1,23 @@
 package org.firstinspires.ftc.teamcode.robot.opmodes
 
-import com.pedropathing.follower.Follower
+import com.pedropathing.geometry.Pose
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp
 import dev.nextftc.core.components.BindingsComponent
 import dev.nextftc.core.components.SubsystemComponent
 import dev.nextftc.extensions.pedro.PedroComponent
+import dev.nextftc.extensions.pedro.PedroComponent.Companion.follower
 import dev.nextftc.ftc.NextFTCOpMode
 import dev.nextftc.ftc.components.BulkReadComponent
-import dev.nextftc.bindings.button
-import dev.nextftc.control.KineticState
-import dev.nextftc.core.commands.Command
+import dev.nextftc.core.commands.delays.Delay
+import dev.nextftc.core.commands.groups.ParallelGroup
+import dev.nextftc.core.commands.groups.SequentialGroup
 import dev.nextftc.extensions.pedro.PedroDriverControlled
 import dev.nextftc.ftc.Gamepads
-import org.firstinspires.ftc.teamcode.ILT.Next.Commands.ShootCommands
+
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Config.RobotConfig
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Enums.Alliance
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Intake.Intake
 import org.firstinspires.ftc.teamcode.robot.data.config.RobotState
-import org.firstinspires.ftc.teamcode.robot.data.enums.TurretMode
-import org.firstinspires.ftc.teamcode.robot.data.enums.OuttakeMode
 import org.firstinspires.ftc.teamcode.robot.subsystems.intake.Gate
 import org.firstinspires.ftc.teamcode.robot.subsystems.shooter.FlyWheel
 import org.firstinspires.ftc.teamcode.robot.subsystems.shooter.Hood
@@ -27,6 +26,7 @@ import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Shooter.Turret
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants
 import org.firstinspires.ftc.teamcode.robot.subsystems.drive.DriveTrain
 import org.firstinspires.ftc.teamcode.robot.subsystems.vision.Limelight
+import kotlin.math.PI
 import kotlin.math.abs
 
 @TeleOp(name = "Main TeleOp", group = "Competition")
@@ -35,86 +35,85 @@ class MainTeleOp : NextFTCOpMode() {
     init {
         addComponents(
             PedroComponent(Constants::createFollower),
-            SubsystemComponent(
-                DriveTrain, FlyWheel, Intake, Turret,
-                Hood, Limelight, OuttakeController, Gate
-            ),
-            BulkReadComponent,
-            BindingsComponent
+            SubsystemComponent(DriveTrain, FlyWheel, Intake, Turret, Hood, Limelight, OuttakeController, Gate),
+            BulkReadComponent, BindingsComponent
         )
     }
+
+    private enum class AimModeTele { OFF, FUSED }
+    private var currentMode = AimModeTele.OFF
 
     override fun onInit() {
         RobotConfig.alliance = Alliance.RED
         RobotState.reset()
+        follower.pose = Pose(0.0, 0.0, 0.0)
     }
 
     override fun onStartButtonPressed() {
-        // Pedro Pathing Driver Controlled Setup
-        val driverControlled = PedroDriverControlled(
+        PedroDriverControlled(
             { -gamepad1.left_stick_y.toDouble() },
-            { gamepad1.left_stick_x.toDouble() },
+            { -gamepad1.left_stick_x.toDouble() },
             { -gamepad1.right_stick_x.toDouble() },
-            false // Field Centric
-        )
-        driverControlled.schedule()
+            false // FIXED: Set to true (Matches your smooth Test Op)
+        ).schedule()
 
-        bindDriverControls()
-
+        bindControls()
     }
 
-    private fun bindDriverControls() {
-        // Intake Toggle
-        button { gamepad1.left_trigger > 0.5f }
-            .whenTrue(Intake.reverse)
+    private fun bindControls() {
+        // --- DRIVER (GP1) ---
+        Gamepads.gamepad1.leftTrigger.greaterThan(0.5) whenBecomesTrue Intake.run whenBecomesFalse Intake.stop
+        Gamepads.gamepad1.leftBumper whenBecomesTrue Intake.reverse whenBecomesFalse Intake.stop
+        Gamepads.gamepad1.rightTrigger.greaterThan(0.5) whenBecomesTrue FlyWheel.spin whenBecomesFalse FlyWheel.stop
 
+        Gamepads.gamepad1.rightBumper whenBecomesTrue ShootCommands.shoot
+        Gamepads.gamepad1.circle whenBecomesTrue ShootCommands.stopAll
+        Gamepads.gamepad1.triangle whenBecomesTrue { currentMode = AimModeTele.FUSED }
+        Gamepads.gamepad1.square whenBecomesTrue { follower.setPose(Pose(follower.pose.x, follower.pose.y, 0.0)) }
 
-        // Reverse Intake
-        button { gamepad1.left_bumper }
-            .whenTrue(Intake.run )
-            .whenFalse(Intake.stop)
-        button { gamepad1.right_trigger > 0.5f}
-            .whenTrue(FlyWheel.spin)
-        button{ gamepad1.right_bumper}
-            .whenTrue { ShootCommands.shoot }
-        button{gamepad1.circle}
-            .whenTrue(FlyWheel.stop)
-        button {gamepad1.square}
-            .whenTrue(DriveTrain.resetHeading)
+        // --- OPERATOR (GP2) ---
+        // Gate Controls
+        Gamepads.gamepad1.dpadLeft whenBecomesTrue Gate.open
+        Gamepads.gamepad1.dpadRight whenBecomesTrue Gate.close
+
+        // Hood Adjustments (Incremental nudges)
+        Gamepads.gamepad1.dpadUp whenBecomesTrue Hood.moveUp
+        Gamepads.gamepad1.dpadDown whenBecomesTrue Hood.moveDown
     }
-
 
     override fun onUpdate() {
-        // 1. ==================== TURRET MANUAL OVERRIDE ====================
+        // Sync Odo
+        RobotState.currentX = follower.pose.x
+        RobotState.currentY = follower.pose.y
+        val rawHeading = follower.pose.heading
+        RobotState.currentHeading = if (abs(rawHeading) > 2.0 * PI) Math.toRadians(rawHeading) else rawHeading
+        RobotState.poseValid = true
 
-        val turretInput = gamepad2.right_stick_x.toDouble()
-        val isManualNudging = abs(turretInput) > 0.1 || gamepad2.left_bumper || gamepad2.right_bumper
-
-        if (isManualNudging) {
-            RobotState.turretMode = TurretMode.MANUAL
-
-            // Priority: Bumpers for fixed speed, Stick for variable speed
-            Turret.manualPower = when {
-                gamepad2.left_bumper -> -RobotConfig.TurretConfig.manualPowerFast
-                gamepad2.right_bumper -> RobotConfig.TurretConfig.manualPowerFast
-                else -> turretInput * RobotConfig.TurretConfig.manualPowerFast
-            }
+        // Turret Logic Execution
+        when (currentMode) {
+            AimModeTele.OFF -> Turret.stop()
+            AimModeTele.FUSED -> Turret.aimWithBoth()
         }
 
-        // 2. ==================== HOOD MANUAL ADJUST ====================
-        val hoodInput = -gamepad2.left_stick_y.toDouble() // Negative for "Up is Up"
-        if (abs(hoodInput) > 0.1) {
-            // Manually nudging the hood position in RobotState
-            RobotState.hoodPosition = (RobotState.hoodPosition + hoodInput * 0.005).coerceIn(0.0, 1.0)
+        // --- Manual Overrides ---
+        // If the operator touches the sticks, it should probably disable Auto-Aim to prevent fighting
+        val tInput = gamepad2.right_stick_x.toDouble()
+        if (abs(tInput) > 0.1) {
+            currentMode = AimModeTele.OFF
+            Turret.currentState = Turret.State.MANUAL
+            Turret.manualPower = tInput * RobotConfig.TurretConfig.manualPowerFast
         }
 
-        // 3. ==================== TELEMETRY ====================
-        telemetry.run {
-            addData("Mode", "Outtake: ${RobotState.outtakeMode} | Turret: ${RobotState.turretMode}")
-            addData("Target", if(RobotState.limelightHasTarget) "LOCKED" else "SEARCHING")
-            addData("Ready", if(OuttakeController.canShoot()) "READY TO FIRE" else "WAITING...")
-            addData("Dist (LL/Odom)", "%.1f / %.1f".format(RobotState.distanceToGoalLimelight ?: 0.0, RobotState.distanceToGoalOdometry))
-            update()
+        val hInput = -gamepad2.left_stick_y.toDouble()
+        if (abs(hInput) > 0.1) {
+            Hood.setPosition(RobotState.hoodPosition + (hInput * 0.01))
         }
+
+        // Telemetry
+        telemetry.addData("Mode", currentMode)
+        telemetry.addData("Turret Aligned", RobotState.turretAligned)
+        telemetry.addData("Hood Pos", "%.2f".format(RobotState.hoodPosition))
+        telemetry.addData("Flywheel", if (FlyWheel.isAtTargetVelocity()) "READY" else "SPINNING")
+        telemetry.update()
     }
 }

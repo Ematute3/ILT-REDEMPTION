@@ -101,18 +101,12 @@ object FlyWheel : Subsystem {
     }
 
     /** Stop the flywheel */
-    fun stop() {
-        targetVelocity = 0.0
 
-    }
 
     // ==================== COMMANDS ====================
 
     /** Command to spin at full power (bypasses PID) */
-    val spinFull = InstantCommand {
-        fly1.power = 1.0
-        fly2.power = 1.0
-    }
+
     val spin = InstantCommand{
         targetVelocity = 1500.0
 
@@ -121,15 +115,7 @@ object FlyWheel : Subsystem {
         targetVelocity = 0.0
     }
 
-    /** Command to stop motors directly */
-    val stopMotors = InstantCommand {
-        fly1.power = 0.0
-        fly2.power = 0.0
-    }
-
-    /** Command to reverse (clear jams) */
     val reverse = InstantCommand {
-        fly1.power = -0.5
-        fly2.power = -0.5
+       targetVelocity = -100.0
     }
 }
