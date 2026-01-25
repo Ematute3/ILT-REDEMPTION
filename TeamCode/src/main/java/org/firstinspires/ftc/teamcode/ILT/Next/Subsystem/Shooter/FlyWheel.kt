@@ -117,6 +117,9 @@ object FlyWheel : Subsystem {
         targetVelocity = 1500.0
 
     }
+    val stop = InstantCommand{
+        targetVelocity = 0.0
+    }
 
     /** Command to stop motors directly */
     val stopMotors = InstantCommand {

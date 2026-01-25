@@ -1,10 +1,13 @@
-package org.firstinspires.ftc.teamcode.ILT.Next.TestOp
+package org.firstinspires.ftc.teamcode.robot.opmodes.test
 
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp
+import dev.nextftc.core.components.BindingsComponent
 import dev.nextftc.core.components.SubsystemComponent
+import dev.nextftc.ftc.Gamepads
 import dev.nextftc.ftc.NextFTCOpMode
 import dev.nextftc.ftc.components.BulkReadComponent
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Config.RobotConfig
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Shooter.Turret
 
 import org.firstinspires.ftc.teamcode.robot.data.config.RobotState
 import org.firstinspires.ftc.teamcode.robot.subsystems.vision.Limelight
@@ -51,7 +54,8 @@ class LimelightTest : NextFTCOpMode() {
     init {
         addComponents(
             SubsystemComponent(Limelight),
-            BulkReadComponent
+            BulkReadComponent,
+            BindingsComponent
         )
     }
 
@@ -63,22 +67,12 @@ class LimelightTest : NextFTCOpMode() {
 
     override fun onStartButtonPressed() {
         // Nothing needed
+
     }
 
     override fun onUpdate() {
         // ==================== CALIBRATION ADJUSTMENTS ====================
-        if (gamepad1.dpad_up) {
-            RobotConfig.LimelightConfig.mountAngleDeg += 0.5
-        }
-        if (gamepad1.dpad_down) {
-            RobotConfig.LimelightConfig.mountAngleDeg -= 0.5
-        }
-        if (gamepad1.dpad_right) {
-            RobotConfig.LimelightConfig.lensHeightIn += 0.25
-        }
-        if (gamepad1.dpad_left) {
-            RobotConfig.LimelightConfig.lensHeightIn -= 0.25
-        }
+
 
         // ==================== TELEMETRY ====================
         telemetry.addLine("=== LIMELIGHT TEST ===")
@@ -90,20 +84,20 @@ class LimelightTest : NextFTCOpMode() {
 
         if (RobotState.limelightHasTarget) {
             telemetry.addLine("--- TARGET DATA ---")
-            telemetry.addData("TX (horizontal)", "%.2f°".format(RobotState.limelightTx))
-            telemetry.addData("TY (vertical)", "%.2f°".format(RobotState.limelightTy))
-            telemetry.addData("TA (area)", "%.2f%%".format(RobotState.limelightTa))
+            telemetry.addData("TX (horizontal)",  RobotState.limelightTx)
+            telemetry.addData("TY (vertical)",  RobotState.limelightTy)
+            telemetry.addData("TA (area)",  RobotState.limelightTa)
             telemetry.addLine()
             telemetry.addLine("--- CALCULATED DISTANCE ---")
-            telemetry.addData("Distance",
-                RobotState.distanceToGoalLimelight?.let { "%.1f inches".format(it) } ?: "N/A")
+            val distanceStr = RobotState.distanceToGoalLimelight
+            telemetry.addData("Distance", distanceStr)
             telemetry.addLine()
 
             // Show what TX means
             when {
-                RobotState.limelightTx > 2 -> telemetry.addData("Target is", "→ RIGHT")
-                RobotState.limelightTx < -2 -> telemetry.addData("Target is", "← LEFT")
-                else -> telemetry.addData("Target is", "✓ CENTERED")
+                RobotState.limelightTx > 2 -> telemetry.addData("Target is", ">> RIGHT")
+                RobotState.limelightTx < -2 -> telemetry.addData("Target is", "<< LEFT")
+                else -> telemetry.addData("Target is", "CENTERED")
             }
         } else {
             telemetry.addLine("NO TARGET VISIBLE")
@@ -112,10 +106,17 @@ class LimelightTest : NextFTCOpMode() {
 
         telemetry.addLine()
         telemetry.addLine("--- CALIBRATION VALUES ---")
-        telemetry.addData("Mount Angle (Dpad U/D)", "%.1f°".format(RobotConfig.LimelightConfig.mountAngleDeg))
-        telemetry.addData("Lens Height (Dpad L/R)", "%.2f in".format(RobotConfig.LimelightConfig.lensHeightIn))
-        telemetry.addData("Goal Height", "%.1f in".format(RobotConfig.LimelightConfig.goalHeightIn))
+        telemetry.addData(
+            "Mount Angle (Dpad U/D)",
+             RobotConfig.LimelightConfig.mountAngleDeg
+        )
+        telemetry.addData(
+            "Lens Height (Dpad L/R)",
+            RobotConfig.LimelightConfig.lensHeightIn
+        )
+        telemetry.addData("Goal Height", RobotConfig.LimelightConfig.goalHeightIn)
         telemetry.addLine()
         telemetry.addData("Motif Detected", RobotState.detectedMotif)
+        telemetry.update()
     }
 }

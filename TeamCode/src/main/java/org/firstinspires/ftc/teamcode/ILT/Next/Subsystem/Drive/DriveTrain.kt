@@ -1,12 +1,14 @@
 package org.firstinspires.ftc.teamcode.robot.subsystems.drive
 
+import com.pedropathing.geometry.Pose
+import dev.nextftc.core.commands.utility.InstantCommand
 import dev.nextftc.core.subsystems.Subsystem
 import dev.nextftc.extensions.pedro.PedroComponent
-import dev.nextftc.extensions.pedro.PedroDriverControlled
 import dev.nextftc.ftc.ActiveOpMode
-import dev.nextftc.ftc.Gamepads
+import org.firstinspires.ftc.teamcode.pedroPathing.Tuning.follower
 import org.firstinspires.ftc.teamcode.robot.data.config.RobotState
 import kotlin.math.sqrt
+
 
 /**
  * DriveTrain subsystem.
@@ -102,4 +104,8 @@ object DriveTrain : Subsystem {
     }
 
     */
+   val resetHeading = InstantCommand{
+
+        follower.pose = Pose(RobotState.currentX, RobotState.currentY, 0.0)
+    }
 }

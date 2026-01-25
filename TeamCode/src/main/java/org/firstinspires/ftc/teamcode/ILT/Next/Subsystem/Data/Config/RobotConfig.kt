@@ -88,7 +88,7 @@ object RobotConfig {
     object LimelightConfig {
         @JvmField var mountAngleDeg = 10.0           // Tilt angle from horizontal
         @JvmField var lensHeightIn = 12.976          // Height of lens from ground
-        @JvmField var goalHeightIn = 39.5            // Height of scoring target
+        @JvmField var goalHeightIn = 30.0           // Height of scoring target
 
         const val POLL_RATE_HZ = 100
         const val DEFAULT_PIPELINE = 0

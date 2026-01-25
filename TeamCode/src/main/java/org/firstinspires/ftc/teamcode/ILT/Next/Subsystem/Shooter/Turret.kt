@@ -39,10 +39,9 @@ import kotlin.math.atan2
  */
 object Turret : Subsystem {
     enum class State { IDLE, MANUAL, LIMELIGHT, ODOMETRY }
+
     // ==================== HARDWARE ====================
-    private  var motor = MotorEx(RobotConfig.Hardware.TURRET_MOTOR)
-
-
+    private var motor = MotorEx(RobotConfig.Hardware.TURRET_MOTOR)
 
     // ==================== CONTROL ====================
     var controller = controlSystem {
@@ -54,11 +53,24 @@ object Turret : Subsystem {
     var currentState = State.IDLE
 
     // ==================== TUNING PARAMETERS ====================
-    // These can be adjusted from FTC Dashboard
+    // Limelight tracking gains - TUNED FOR STABILITY
+    @JvmField var kP_limelight: Double = 0.015   // Reduced from 0.03 to reduce oscillation
+    @JvmField var kD_limelight: Double = 0.008   // Added derivative to dampen oscillation
+    @JvmField var minPower: Double = 0.08        // Reduced minimum power
+    @JvmField var maxPower: Double = 0.1         // Reduced max power for smoother tracking
 
-    @JvmField var kP_limelight: Double = 0.03    // Proportional gain for LL aiming
-    @JvmField var minPower: Double = 0.1         // Min power to overcome friction
-    @JvmField var maxPower: Double = 0.6         // Max power limit
+    // Deadband and tolerance
+    @JvmField var limelightDeadband: Double = 1.0     // Ignore small TX values (degrees)
+    @JvmField var alignmentTolerance: Double = 2.0    // Consider aligned within this (degrees)
+
+    // Lost target behavior
+    @JvmField var searchPower: Double = 0.15          // Power when searching for lost target
+    @JvmField var lostTargetTimeout: Long = 500       // ms before starting search
+
+    // ==================== STATE TRACKING ====================
+    private var lastTx: Double = 0.0                   // For derivative calculation
+    private var lastTargetSeenTime: Long = 0           // Track when we last saw target
+    private var searchDirection: Double = 1.0          // Which way to search (-1 or 1)
 
     // ==================== CONSTANTS ====================
     private const val RADIANS_PER_TICK = 2.0 * PI /
@@ -66,27 +78,23 @@ object Turret : Subsystem {
 
     // ==================== INITIALIZATION ====================
     override fun initialize() {
+        // IMPORTANT: Reset encoder to 0
+        // Assumes turret is physically pointing forward!
+        motor.motor.mode = DcMotor.RunMode.STOP_AND_RESET_ENCODER
+        motor.motor.mode = DcMotor.RunMode.RUN_WITHOUT_ENCODER
 
+        lastTargetSeenTime = System.currentTimeMillis()
 
-            // IMPORTANT: Reset encoder to 0
-            // Assumes turret is physically pointing forward!
-            motor.motor.mode = DcMotor.RunMode.STOP_AND_RESET_ENCODER
-            motor.motor.mode = DcMotor.RunMode.RUN_WITHOUT_ENCODER
-
-
-            ActiveOpMode.telemetry.addData("Turret", "Initialized - Encoder zeroed")
-            ActiveOpMode.telemetry.addData("WARNING", "Make sure turret is facing FORWARD!")
-            ActiveOpMode.telemetry.update()
-
-
+        ActiveOpMode.telemetry.addData("Turret", "Initialized - Encoder zeroed")
+        ActiveOpMode.telemetry.addData("WARNING", "Make sure turret is facing FORWARD!")
+        ActiveOpMode.telemetry.update()
     }
 
     // ==================== PERIODIC ====================
     override fun periodic() {
-
-
         // Update RobotState
         RobotState.turretYaw = getYaw()
+
         when (currentState) {
             State.IDLE -> motor.power = 0.0
 
@@ -95,20 +103,7 @@ object Turret : Subsystem {
             }
 
             State.LIMELIGHT -> {
-                if (RobotState.limelightHasTarget) {
-                    val tx = RobotState.limelightTx
-                    if (abs(tx) < RobotConfig.LimelightConfig.alignmentToleranceDeg) {
-                        motor.power = 0.0
-                        RobotState.turretAligned = true
-                    } else {
-                        var power = -kP_limelight * tx
-                        if (abs(power) < minPower) power = Math.signum(power) * minPower
-                        motor.power = power.coerceIn(-maxPower, maxPower)
-                        RobotState.turretAligned = false
-                    }
-                } else {
-                    motor.power = 0.0
-                }
+                aimWithLimelightImproved()
             }
 
             State.ODOMETRY -> {
@@ -117,7 +112,11 @@ object Turret : Subsystem {
                         RobotState.goalY - RobotState.currentY,
                         RobotState.goalX - RobotState.currentX
                     )
+
+                    // Calculate robot-relative turret angle
                     val targetYaw = normalizeAngle(angleToGoal - RobotState.currentHeading)
+
+                    // Clamp to turret limits
                     val clampedTarget = targetYaw.coerceIn(
                         RobotConfig.TurretConfig.MIN_ANGLE,
                         RobotConfig.TurretConfig.MAX_ANGLE
@@ -129,6 +128,7 @@ object Turret : Subsystem {
                 }
             }
         }
+
         // Telemetry
         ActiveOpMode.telemetry.run {
             addData("=== TURRET ===", "")
@@ -137,7 +137,98 @@ object Turret : Subsystem {
             addData("Goal", "%.1f°".format(Math.toDegrees(controller.goal.position)))
             addData("Power", "%.2f".format(motor.power))
             addData("Aligned", RobotState.turretAligned)
+            addData("State", currentState.name)
+            if (currentState == State.LIMELIGHT) {
+                addData("LL Target", RobotState.limelightHasTarget)
+                addData("LL TX", "%.2f°".format(RobotState.limelightTx))
+            }
         }
+    }
+
+    // ==================== IMPROVED LIMELIGHT TRACKING ====================
+
+    /**
+     * Improved Limelight tracking with PD control, deadband, and lost-target recovery
+     */
+    private fun aimWithLimelightImproved() {
+        if (!RobotState.limelightHasTarget) {
+            handleLostTarget()
+            return
+        }
+
+        // We have a target - update last seen time
+        lastTargetSeenTime = System.currentTimeMillis()
+
+        val tx = RobotState.limelightTx
+
+        // Apply deadband - ignore tiny errors
+        if (abs(tx) < limelightDeadband) {
+            motor.power = 0.0
+            RobotState.turretAligned = true
+            lastTx = tx
+            return
+        }
+
+        // Check if aligned within tolerance
+        if (abs(tx) < alignmentTolerance) {
+            motor.power = 0.0
+            RobotState.turretAligned = true
+            lastTx = tx
+            return
+        }
+
+        // PD Control for smooth tracking
+        // P term: proportional to error
+        val proportional = -kP_limelight * tx
+
+        // D term: resist rapid changes (derivative of error)
+        val derivative = -kD_limelight * (tx - lastTx)
+        lastTx = tx
+
+        // Combine P and D
+        var power = proportional + derivative
+
+        // Add minimum power to overcome static friction (only if moving)
+        if (abs(power) > 0.01) {
+            if (power > 0 && power < minPower) power = minPower
+            else if (power < 0 && power > -minPower) power = -minPower
+        }
+
+        // Clamp to max power
+        motor.power = power.coerceIn(-maxPower, maxPower)
+        RobotState.turretAligned = false
+    }
+
+    /**
+     * Handle lost target - search in last known direction
+     */
+    private fun handleLostTarget() {
+        val timeSinceLost = System.currentTimeMillis() - lastTargetSeenTime
+
+        if (timeSinceLost < lostTargetTimeout) {
+            // Just lost it - hold position briefly
+            motor.power = 0.0
+        } else {
+            // Been lost for a while - slowly search
+            // Determine search direction based on last known TX
+            if (lastTx > 0) {
+                searchDirection = 1.0  // Target was right, keep searching right
+            } else {
+                searchDirection = -1.0  // Target was left, keep searching left
+            }
+
+            // Check if we're at limits
+            val currentYaw = getYaw()
+            if (currentYaw >= RobotConfig.TurretConfig.MAX_ANGLE - Math.toRadians(5.0)) {
+                searchDirection = -1.0  // Reverse search if at right limit
+            } else if (currentYaw <= RobotConfig.TurretConfig.MIN_ANGLE + Math.toRadians(5.0)) {
+                searchDirection = 1.0   // Reverse search if at left limit
+            }
+
+            motor.power = searchPower * searchDirection
+        }
+
+        RobotState.turretAligned = false
     }
 
     // ==================== POSITION FUNCTIONS ====================
@@ -145,6 +236,7 @@ object Turret : Subsystem {
     /**
      * Get turret yaw in radians.
      * 0 = forward, positive = left, negative = right
+     * NORMALIZED to [-π, π]
      */
     fun getYaw(): Double {
         return normalizeAngle(motor.currentPosition * RADIANS_PER_TICK)
@@ -158,18 +250,15 @@ object Turret : Subsystem {
     /**
      * Get raw encoder ticks (for debugging).
      */
-    /**
-     * Get raw encoder ticks (for debugging).
-     */
     fun getRawTicks(): Double {
-        return  motor.currentPosition
+        return motor.currentPosition
     }
+
     /**
      * Reset encoder to zero.
      * CALL THIS WHEN TURRET IS PHYSICALLY FACING FORWARD!
      */
     fun resetEncoderToZero() {
-
         motor.motor.mode = DcMotor.RunMode.STOP_AND_RESET_ENCODER
         motor.motor.mode = DcMotor.RunMode.RUN_WITHOUT_ENCODER
         ActiveOpMode.telemetry.addData("Turret", "ENCODER RESET TO ZERO")
@@ -177,6 +266,7 @@ object Turret : Subsystem {
 
     /**
      * Normalize angle to [-π, π].
+     * This ensures turret always takes shortest path!
      */
     fun normalizeAngle(radians: Double): Double {
         var angle = radians % (2.0 * PI)
@@ -189,70 +279,19 @@ object Turret : Subsystem {
 
     /**
      * Aim using Limelight TX (horizontal offset).
-     * Drives turret until TX ≈ 0 (aligned with target).
+     * Uses improved PD control with deadband and lost-target recovery.
      */
     fun aimWithLimelight() {
-
-        if (!RobotState.limelightHasTarget) {
-            motor.power = 0.0
-            RobotState.turretAligned = false
-            return
-        }
-
-        val tx = RobotState.limelightTx
-
-        // Check if aligned
-        if (abs(tx) < RobotConfig.LimelightConfig.alignmentToleranceDeg) {
-            motor.power = 0.0
-            RobotState.turretAligned = true
-            return
-        }
-
-        // Proportional control: power = -kP * tx
-        // Negative because positive TX means target is right, so turn right (negative)
-        var power = -kP_limelight * tx
-
-        // Add minimum power to overcome static friction
-        if (power > 0 && power < minPower) power = minPower
-        else if (power < 0 && power > -minPower) power = -minPower
-
-        motor.power = power.coerceIn(-maxPower, maxPower)
-        RobotState.turretAligned = false
+        currentState = State.LIMELIGHT
     }
 
     /**
      * Aim using odometry (robot position).
      * Calculates angle to goal and rotates turret.
+     * Uses shortest path via normalizeAngle!
      */
     fun aimWithOdometry() {
-        if (!RobotState.poseValid) {
-            motor.power = 0.0
-            RobotState.turretAligned = false
-            return
-        }
-
-        // Calculate field angle to goal
-        val angleToGoal = atan2(
-            RobotState.goalY - RobotState.currentY,
-            RobotState.goalX - RobotState.currentX
-        )
-
-        // Convert to robot-relative (turret) angle
-        val targetYaw = normalizeAngle(angleToGoal - RobotState.currentHeading)
-
-        // Clamp to turret limits
-        val clampedTarget = targetYaw.coerceIn(
-            RobotConfig.TurretConfig.MIN_ANGLE,
-            RobotConfig.TurretConfig.MAX_ANGLE
-        )
-
-        // PID control to target
-        controller.goal = KineticState(clampedTarget, 0.0)
-        val currentYaw = getYaw()
-        motor.power = controller.calculate(KineticState(currentYaw, 0.0))
-
-        // Update alignment status
-        RobotState.turretAligned = abs(currentYaw - clampedTarget) < Math.toRadians(2.0)
+        currentState = State.ODOMETRY
     }
 
     /**
@@ -260,25 +299,24 @@ object Turret : Subsystem {
      * Uses Limelight when target visible, odometry otherwise.
      */
     fun aimWithBoth() {
-
-
         if (RobotState.limelightHasTarget) {
-            aimWithLimelight()
+            currentState = State.LIMELIGHT
         } else if (RobotState.poseValid) {
-            aimWithOdometry()
+            currentState = State.ODOMETRY
         } else {
-            motor.power = 0.0
-            RobotState.turretAligned = false
+            currentState = State.IDLE
         }
     }
 
     /**
      * Go to a specific angle (radians).
+     * USES SHORTEST PATH via normalizeAngle!
      */
     fun goToYaw(yawRadians: Double) {
+        // Normalize the target to ensure shortest path
+        val normalizedTarget = normalizeAngle(yawRadians)
 
-
-        controller.goal = KineticState(yawRadians, 0.0)
+        controller.goal = KineticState(normalizedTarget, 0.0)
         motor.power = controller.calculate(KineticState(getYaw(), 0.0))
     }
 
@@ -293,15 +331,15 @@ object Turret : Subsystem {
      * Set manual power directly.
      */
     fun setManualPowerTurret(power: Double) {
-
-        motor.power = power.coerceIn(-maxPower, maxPower)
+        currentState = State.MANUAL
+        manualPower = power.coerceIn(-maxPower, maxPower)
     }
 
     /**
      * Stop the turret.
      */
     fun stop() {
-
+        currentState = State.IDLE
         motor.power = 0.0
     }
 
@@ -311,17 +349,19 @@ object Turret : Subsystem {
     val zeroTurret = InstantCommand { resetEncoderToZero() }
 
     // Manual control
-    val spinLeft = InstantCommand { manualPower = RobotConfig.TurretConfig.manualPowerFast }
-    val spinRight = InstantCommand { manualPower = -RobotConfig.TurretConfig.manualPowerFast }
-    val nudgeLeft = InstantCommand { manualPower = RobotConfig.TurretConfig.manualPowerSlow }
-    val nudgeRight = InstantCommand { manualPower = -RobotConfig.TurretConfig.manualPowerSlow }
-    val stopTurret = InstantCommand {
-        manualPower = 0.0
-        stop()
-    }
+    val spinLeft = InstantCommand { setManualPowerTurret(RobotConfig.TurretConfig.manualPowerFast) }
+    val spinRight = InstantCommand { setManualPowerTurret(-RobotConfig.TurretConfig.manualPowerFast) }
+    val nudgeLeft = InstantCommand { setManualPowerTurret(RobotConfig.TurretConfig.manualPowerSlow) }
+    val nudgeRight = InstantCommand { setManualPowerTurret(-RobotConfig.TurretConfig.manualPowerSlow) }
+    val stopTurret = InstantCommand { stop() }
 
-    // Go to preset positions
+    // Go to preset positions (uses shortest path!)
     val goToCenter = InstantCommand { goToYawDegrees(0.0) }
     val goToLeft45 = InstantCommand { goToYawDegrees(45.0) }
     val goToRight45 = InstantCommand { goToYawDegrees(-45.0) }
+
+    // Aiming commands
+    val startLimelightTracking = InstantCommand { aimWithLimelight() }
+    val startOdometryTracking = InstantCommand { aimWithOdometry() }
+    val startHybridTracking = InstantCommand { aimWithBoth() }
 }

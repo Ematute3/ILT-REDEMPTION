@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.robot.opmodes
 
+import com.pedropathing.follower.Follower
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp
 import dev.nextftc.core.components.BindingsComponent
 import dev.nextftc.core.components.SubsystemComponent
@@ -52,7 +53,7 @@ class MainTeleOp : NextFTCOpMode() {
         // Pedro Pathing Driver Controlled Setup
         val driverControlled = PedroDriverControlled(
             { -gamepad1.left_stick_y.toDouble() },
-            { -gamepad1.left_stick_x.toDouble() },
+            { gamepad1.left_stick_x.toDouble() },
             { -gamepad1.right_stick_x.toDouble() },
             false // Field Centric
         )
@@ -64,18 +65,22 @@ class MainTeleOp : NextFTCOpMode() {
 
     private fun bindDriverControls() {
         // Intake Toggle
-        button { gamepad1.left_trigger > 0.1f }
-            .whenTrue(Intake.run)
-            .whenFalse(Intake.stop)
+        button { gamepad1.left_trigger > 0.5f }
+            .whenTrue(Intake.reverse)
+
 
         // Reverse Intake
         button { gamepad1.left_bumper }
-            .whenTrue(Intake.run)
+            .whenTrue(Intake.run )
             .whenFalse(Intake.stop)
         button { gamepad1.right_trigger > 0.5f}
             .whenTrue(FlyWheel.spin)
         button{ gamepad1.right_bumper}
             .whenTrue { ShootCommands.shoot }
+        button{gamepad1.circle}
+            .whenTrue(FlyWheel.stop)
+        button {gamepad1.square}
+            .whenTrue(DriveTrain.resetHeading)
     }
 
 

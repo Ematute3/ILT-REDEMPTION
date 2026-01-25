@@ -1,11 +1,16 @@
 package org.firstinspires.ftc.teamcode.ILT.Next.TestOp
 
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp
+import dev.nextftc.core.components.BindingsComponent
 import dev.nextftc.core.components.SubsystemComponent
+import dev.nextftc.extensions.pedro.PedroComponent
+import dev.nextftc.extensions.pedro.PedroDriverControlled
 import dev.nextftc.ftc.NextFTCOpMode
 import dev.nextftc.ftc.components.BulkReadComponent
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Config.RobotConfig
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Shooter.Turret
+import org.firstinspires.ftc.teamcode.pedroPathing.Constants
+import org.firstinspires.ftc.teamcode.pedroPathing.Constants.createFollower
 
 import org.firstinspires.ftc.teamcode.robot.data.config.RobotState
 
@@ -48,9 +53,11 @@ import kotlin.math.abs
 class TurretAimingTestOpMode : NextFTCOpMode() {
 
     init {
-        addComponents(
+        addComponents(PedroComponent(Constants::createFollower),
             SubsystemComponent(Turret, Limelight),
-            BulkReadComponent
+            BulkReadComponent,
+            BindingsComponent,
+
         )
     }
 
@@ -64,9 +71,18 @@ class TurretAimingTestOpMode : NextFTCOpMode() {
 
     override fun onStartButtonPressed() {
         autoAimEnabled = false
+        val driverControlled = PedroDriverControlled(
+            { -gamepad1.left_stick_y.toDouble() },
+            { gamepad1.left_stick_x.toDouble() },
+            { -gamepad1.right_stick_x.toDouble() },
+            false // Field Centric
+        )
+        driverControlled.schedule()
+
     }
 
     override fun onUpdate() {
+
         // ==================== MODE SELECTION ====================
         if (gamepad1.a) {
             autoAimEnabled = true
@@ -85,15 +101,13 @@ class TurretAimingTestOpMode : NextFTCOpMode() {
             Turret.setManualPowerTurret(manualInput * RobotConfig.TurretConfig.manualPowerFast)
         } else if (autoAimEnabled) {
             // Auto-aim using Limelight
-            Turret.aimWithLimelight()
+            Turret.startHybridTracking.schedule()
         } else {
             Turret.stop()
         }
 
         // ==================== ZERO ENCODER ====================
-        if (gamepad1.right_bumper) {
-            Turret.resetEncoderToZero()
-        }
+
 
         // ==================== TUNING ====================
         if (gamepad1.dpad_up) {
@@ -147,5 +161,6 @@ class TurretAimingTestOpMode : NextFTCOpMode() {
         telemetry.addData("Tolerance (Dpad L/R)", "%.1f°".format(RobotConfig.LimelightConfig.alignmentToleranceDeg))
         telemetry.addLine()
         telemetry.addLine("A=AutoAim  B=Stop  Stick=Manual")
+        telemetry.update()
     }
 }
