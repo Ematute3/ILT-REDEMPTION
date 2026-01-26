@@ -20,9 +20,9 @@ object RobotConfig {
     const val FIELD_SIZE = 144.0
 
     // Goal positions (will be adjusted based on alliance)
-    const val GOAL_Y = FIELD_SIZE - 8.0  // 136.0 inches
-    const val RED_GOAL_X = FIELD_SIZE - 6.0  // 138.0 inches
-    const val BLUE_GOAL_X = 6.0
+    const val GOAL_Y = FIELD_SIZE  // 136.0 inches
+    const val RED_GOAL_X = FIELD_SIZE  // 138.0 inches
+    const val BLUE_GOAL_X = 0.0
 
     // Robot dimensions
     const val ROBOT_WIDTH = 14.358268
@@ -50,10 +50,22 @@ object RobotConfig {
     }
 
     // ==================== FLYWHEEL CONFIG ====================
+    @Configurable
     object FlywheelConfig {
-        @JvmField var pid = PIDCoefficients(0.006, 0.0, 0.0)
-        @JvmField var feedforward = BasicFeedforwardParameters(1.0 / 2500.0, 0.0, 0.07)
 
+        @JvmField var pid = PIDCoefficients(
+             0.08,    // moderate P — strong enough to respond, low enough to avoid wild oscillation
+            0.0,     // keep 0 (integrator usually hurts flywheels — windup/overshoot)
+            0.005   // tiny D to dampen any bounce (increase to 0.01–0.03 only if oscillating)
+        )
+
+        @JvmField var feedforward = BasicFeedforwardParameters(
+           1.0 / 1950.0,   // tune this! Measure your motor's real free RPM at 100% power (no load)
+            // Typical FTC shooter motors (550/Neo/etc geared) → 1800–2200 RPM free
+            // Example: if measured 1980 RPM free → use 1.0 / 1980.0
+            0.07,           // static friction — start 0.05–0.10; increase until it spins up from 0 RPM reliably
+            0.0             // accel usually 0 for flywheels (no big inertia changes)
+        )
         const val MOTOR_TICKS_PER_REV = 28.0
         const val WHEEL_DIAMETER_IN = 3.0
         const val WHEEL_RADIUS_IN = WHEEL_DIAMETER_IN / 2.0
@@ -63,7 +75,7 @@ object RobotConfig {
 
     // ==================== TURRET CONFIG ====================
     object TurretConfig {
-        @JvmField var pid = PIDCoefficients(3.5, 0.0, 0.5)
+        @JvmField var pid = PIDCoefficients(0.5, 0.0, 0.3)
 
         const val GEAR_RATIO = 3.62068965517  // 105/29
         const val MOTOR_TICKS_PER_REV = 537.7

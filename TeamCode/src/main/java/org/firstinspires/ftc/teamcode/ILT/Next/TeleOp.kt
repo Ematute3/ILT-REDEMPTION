@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.robot.opmodes
 
+import com.bylazar.telemetry.JoinedTelemetry
+import com.bylazar.telemetry.PanelsTelemetry
 import com.pedropathing.geometry.Pose
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp
 import dev.nextftc.core.components.BindingsComponent
@@ -54,7 +56,7 @@ class MainTeleOp : NextFTCOpMode() {
             { -gamepad1.left_stick_y.toDouble() },
             { -gamepad1.left_stick_x.toDouble() },
             { -gamepad1.right_stick_x.toDouble() },
-            false // FIXED: Set to true (Matches your smooth Test Op)
+            true // FIXED: Set to true (Matches your smooth Test Op)
         ).schedule()
 
         bindControls()
@@ -75,10 +77,9 @@ class MainTeleOp : NextFTCOpMode() {
         // Gate Controls
         Gamepads.gamepad1.dpadLeft whenBecomesTrue Gate.open
         Gamepads.gamepad1.dpadRight whenBecomesTrue Gate.close
+        Gamepads.gamepad1.x whenBecomesTrue {Alliance.BLUE}
 
-        // Hood Adjustments (Incremental nudges)
-        Gamepads.gamepad1.dpadUp whenBecomesTrue Hood.moveUp
-        Gamepads.gamepad1.dpadDown whenBecomesTrue Hood.moveDown
+
     }
 
     override fun onUpdate() {
@@ -88,7 +89,12 @@ class MainTeleOp : NextFTCOpMode() {
         val rawHeading = follower.pose.heading
         RobotState.currentHeading = if (abs(rawHeading) > 2.0 * PI) Math.toRadians(rawHeading) else rawHeading
         RobotState.poseValid = true
-
+        if (gamepad1.dpad_up) {
+            RobotState.hoodPosition = (RobotState.hoodPosition + 0.01).coerceAtMost(1.0)
+        }
+        if (gamepad1.dpad_down) {
+            RobotState.hoodPosition = (RobotState.hoodPosition - 0.01).coerceAtLeast(0.0)
+        }
         // Turret Logic Execution
         when (currentMode) {
             AimModeTele.OFF -> Turret.stop()
@@ -97,23 +103,13 @@ class MainTeleOp : NextFTCOpMode() {
 
         // --- Manual Overrides ---
         // If the operator touches the sticks, it should probably disable Auto-Aim to prevent fighting
-        val tInput = gamepad2.right_stick_x.toDouble()
-        if (abs(tInput) > 0.1) {
-            currentMode = AimModeTele.OFF
-            Turret.currentState = Turret.State.MANUAL
-            Turret.manualPower = tInput * RobotConfig.TurretConfig.manualPowerFast
-        }
 
-        val hInput = -gamepad2.left_stick_y.toDouble()
-        if (abs(hInput) > 0.1) {
-            Hood.setPosition(RobotState.hoodPosition + (hInput * 0.01))
-        }
 
         // Telemetry
         telemetry.addData("Mode", currentMode)
         telemetry.addData("Turret Aligned", RobotState.turretAligned)
         telemetry.addData("Hood Pos", "%.2f".format(RobotState.hoodPosition))
         telemetry.addData("Flywheel", if (FlyWheel.isAtTargetVelocity()) "READY" else "SPINNING")
-        telemetry.update()
+       telemetry.update()
     }
 }

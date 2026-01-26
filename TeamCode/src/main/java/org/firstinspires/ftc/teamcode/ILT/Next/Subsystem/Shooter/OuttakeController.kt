@@ -38,17 +38,17 @@ object OuttakeController : Subsystem {
             }
 
             OuttakeMode.MANUAL -> {
-                applyManualAim()
+                //applyManualAim()
             }
 
             OuttakeMode.AUTO_ODOMETRY -> {
                 if (RobotState.poseValid) {
-                    applyAimFromDistance(RobotState.distanceToGoalOdometry, "Odometry")
+                   // applyAimFromDistance(RobotState.distanceToGoalOdometry, "Odometry")
                 }
             }
 
             OuttakeMode.AUTO_LIMELIGHT -> {
-                applyLimelightAim()
+               // applyLimelightAim()
             }
         }
 
@@ -87,7 +87,7 @@ object OuttakeController : Subsystem {
 
     // ==================== AIM LOGIC ====================
 
-    private fun applyManualAim() {
+  /*  private fun applyManualAim() {
         val snapped = AimbotTable.snapToValidDistance(manualAimDistance)
         // Fixed: AimbotTable.getValues now returns non-null Pair
         val values = AimbotTable.getValues(snapped.toDouble())
@@ -96,7 +96,9 @@ object OuttakeController : Subsystem {
         FlyWheel.setTargetVelocity(values.second)
     }
 
-    private fun applyAimFromDistance(distance: Double, source: String) {
+   */
+
+  /*  private fun applyAimFromDistance(distance: Double, source: String) {
         // Fixed: Uses the clamped version of getValues to prevent NullPointer/Deque errors
         val values = AimbotTable.getValues(distance)
 
@@ -150,4 +152,6 @@ object OuttakeController : Subsystem {
         RobotState.outtakeMode = OuttakeMode.AUTO_LIMELIGHT
         RobotState.turretMode = TurretMode.LIMELIGHT
     }
+
+   */
 }

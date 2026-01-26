@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.robot.subsystems.shooter
 
+import com.bylazar.telemetry.JoinedTelemetry
+import com.bylazar.telemetry.PanelsTelemetry
 import dev.nextftc.control.KineticState
 import dev.nextftc.control.builder.controlSystem
 import dev.nextftc.core.commands.utility.InstantCommand
@@ -45,6 +47,10 @@ object FlyWheel : Subsystem {
 
     // ==================== PERIODIC ====================
     override fun periodic() {
+        controller=controlSystem {
+            velPid(RobotConfig.FlywheelConfig.pid)
+            basicFF(RobotConfig.FlywheelConfig.feedforward)
+        }
         // 1. Update sensor data
         motorRpm = fly1.velocity * 60.0 / RobotConfig.FlywheelConfig.MOTOR_TICKS_PER_REV
 
@@ -65,6 +71,8 @@ object FlyWheel : Subsystem {
         RobotState.flywheelVelocity = fly1.velocity
         RobotState.flywheelAtSpeed = isAtTargetVelocity()
         RobotState.targetFlywheelVelocity = targetVelocity
+
+
 
         // 5. Telemetry
         ActiveOpMode.telemetry.run {
@@ -108,7 +116,7 @@ object FlyWheel : Subsystem {
     /** Command to spin at full power (bypasses PID) */
 
     val spin = InstantCommand{
-        targetVelocity = 1500.0
+        targetVelocity = 500.0
 
     }
     val stop = InstantCommand{
