@@ -45,7 +45,7 @@ class TurretAimingTestOpMode : NextFTCOpMode() {
 
     override fun onStartButtonPressed() {
         currentMode = AimMode.OFF
-        alliance = Alliance.RED
+        alliance = Alliance.BLUE
 
         // Initialize Pose at (12,12) to ensure a valid vector to goal
         follower.pose = Pose(0.0, 0.0, 0.0)
@@ -78,7 +78,7 @@ class TurretAimingTestOpMode : NextFTCOpMode() {
         }
 
         // --- CONTROLS ---
-        if (gamepad1.x) currentMode = AimMode.LIMELIGHT_ONLY
+        if (gamepad1.left_bumper) currentMode = AimMode.LIMELIGHT_ONLY
         if(gamepad1.circle) currentMode = AimMode.FUSED
         if (gamepad1.triangle) currentMode = AimMode.ODOMETRY_ONLY
         if (gamepad1.square) currentMode = AimMode.OFF

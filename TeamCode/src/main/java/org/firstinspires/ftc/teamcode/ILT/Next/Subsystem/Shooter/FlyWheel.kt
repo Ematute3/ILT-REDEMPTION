@@ -53,7 +53,7 @@ object FlyWheel : Subsystem {
         val power = controller.calculate(
             KineticState(
                 fly1.motor.currentPosition.toDouble(),
-                fly1.velocity
+                targetVelocity
             )
         )
 
@@ -110,7 +110,7 @@ object FlyWheel : Subsystem {
     /** Command to spin at full power (bypasses PID) */
 
     val spin = InstantCommand{
-        targetVelocity = 500.0
+        targetVelocity = 200.0
 
     }
     val stop = InstantCommand{

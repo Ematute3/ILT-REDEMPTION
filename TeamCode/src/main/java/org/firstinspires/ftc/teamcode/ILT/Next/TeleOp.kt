@@ -51,7 +51,7 @@ class MainTeleOp : NextFTCOpMode() {
     private var currentMode = AimModeTele.OFF
 
     override fun onInit() {
-        RobotConfig.alliance = Alliance.RED
+        RobotConfig.alliance = Alliance.BLUE
         RobotState.reset()
         follower.pose = Pose(0.0, 0.0, 0.0)
     }

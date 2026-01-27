@@ -28,7 +28,7 @@ class WaitForFlywheelSpeed(
     override fun start() { startTime = System.currentTimeMillis() }
 
     override fun update() {
-        ActiveOpMode.telemetry.addData("Flywheel Wait", "%.0f RPM".format(FlyWheel.getCurrentVelocity()))
+        //ActiveOpMode.telemetry.addData("Flywheel Wait", "%.0f RPM".format(FlyWheel.getCurrentVelocity()))
     }
 }
 

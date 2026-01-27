@@ -56,14 +56,14 @@ object RobotConfig {
         @JvmField var pid = PIDCoefficients(
             0.08,    // moderate P — strong enough to respond, low enough to avoid wild oscillation
             0.0,     // keep 0 (integrator usually hurts flywheels — windup/overshoot)
-            0.005   // tiny D to dampen any bounce (increase to 0.01–0.03 only if oscillating)
+            0.03   // tiny D to dampen any bounce (increase to 0.01–0.03 only if oscillating)
         )
 
         @JvmField var feedforward = BasicFeedforwardParameters(
-            1.0 / 1950.0,   // tune this! Measure your motor's real free RPM at 100% power (no load)
+            0.0,   // tune this! Measure your motor's real free RPM at 100% power (no load)
             // Typical FTC shooter motors (550/Neo/etc geared) → 1800–2200 RPM free
             // Example: if measured 1980 RPM free → use 1.0 / 1980.0
-            0.07,           // static friction — start 0.05–0.10; increase until it spins up from 0 RPM reliably
+            0.00,           // static friction — start 0.05–0.10; increase until it spins up from 0 RPM reliably
             0.0             // accel usually 0 for flywheels (no big inertia changes)
         )
         const val MOTOR_TICKS_PER_REV = 28.0
@@ -76,7 +76,9 @@ object RobotConfig {
     // ==================== TURRET CONFIG ====================
     @Configurable
     object TurretConfig {
-        @JvmField var pid = PIDCoefficients(0.3, 0.0, 0.15)
+        @JvmField var pid = PIDCoefficients(0.5, 0.0, 0.1)
+        @JvmField var feedForward = BasicFeedforwardParameters(0.1,0.0,0.0)
+
 
         const val GEAR_RATIO = 3.62068965517  // 105/29
         const val MOTOR_TICKS_PER_REV = 537.7
