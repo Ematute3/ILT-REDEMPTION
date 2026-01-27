@@ -54,13 +54,13 @@ object RobotConfig {
     object FlywheelConfig {
 
         @JvmField var pid = PIDCoefficients(
-             0.08,    // moderate P — strong enough to respond, low enough to avoid wild oscillation
+            0.08,    // moderate P — strong enough to respond, low enough to avoid wild oscillation
             0.0,     // keep 0 (integrator usually hurts flywheels — windup/overshoot)
             0.005   // tiny D to dampen any bounce (increase to 0.01–0.03 only if oscillating)
         )
 
         @JvmField var feedforward = BasicFeedforwardParameters(
-           1.0 / 1950.0,   // tune this! Measure your motor's real free RPM at 100% power (no load)
+            1.0 / 1950.0,   // tune this! Measure your motor's real free RPM at 100% power (no load)
             // Typical FTC shooter motors (550/Neo/etc geared) → 1800–2200 RPM free
             // Example: if measured 1980 RPM free → use 1.0 / 1980.0
             0.07,           // static friction — start 0.05–0.10; increase until it spins up from 0 RPM reliably
@@ -74,8 +74,9 @@ object RobotConfig {
     }
 
     // ==================== TURRET CONFIG ====================
+    @Configurable
     object TurretConfig {
-        @JvmField var pid = PIDCoefficients(0.5, 0.0, 0.3)
+        @JvmField var pid = PIDCoefficients(0.3, 0.0, 0.15)
 
         const val GEAR_RATIO = 3.62068965517  // 105/29
         const val MOTOR_TICKS_PER_REV = 537.7
@@ -90,6 +91,7 @@ object RobotConfig {
     }
 
     // ==================== HOOD CONFIG ====================
+    @Configurable
     object HoodConfig {
         const val MIN_POSITION = 0.0
         const val MAX_POSITION = 1.0
@@ -97,6 +99,7 @@ object RobotConfig {
     }
 
     // ==================== LIMELIGHT CONFIG ====================
+    @Configurable
     object LimelightConfig {
         @JvmField var mountAngleDeg = 10.0           // Tilt angle from horizontal
         @JvmField var lensHeightIn = 13.2101838583          // Height of lens from ground
@@ -104,11 +107,10 @@ object RobotConfig {
 
         const val POLL_RATE_HZ = 100
         const val DEFAULT_PIPELINE = 0
-
-    // Max turret correction
     }
 
     // ==================== PHYSICS CONFIG ====================
+    @Configurable
     object Physics {
         const val GRAVITY_IN_PER_S2 = 386.0
         @JvmField var launchAngleDeg = 34.36
@@ -116,6 +118,7 @@ object RobotConfig {
     }
 
     // ==================== INTAKE CONFIG ====================
+    @Configurable
     object IntakeConfig {
         @JvmField var intakePower = 1.0
         @JvmField var ejectPower = -1.0
@@ -124,6 +127,7 @@ object RobotConfig {
     }
 
     // ==================== GATE CONFIG ====================
+    @Configurable
     object GateConfig {
         @JvmField var openPosition = 0.0
         @JvmField var closedPosition = 1.0

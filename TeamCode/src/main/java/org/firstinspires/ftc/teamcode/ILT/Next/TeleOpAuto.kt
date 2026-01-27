@@ -1,5 +1,7 @@
-package org.firstinspires.ftc.teamcode.robot.opmodes
+package org.firstinspires.ftc.teamcode.ILT.Next
 
+import com.bylazar.telemetry.JoinedTelemetry
+import com.bylazar.telemetry.PanelsTelemetry
 import com.pedropathing.geometry.Pose
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp
 import dev.nextftc.bindings.button
@@ -20,20 +22,22 @@ import dev.nextftc.ftc.components.BulkReadComponent
 import kotlinx.coroutines.delay
 
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Config.RobotConfig
+
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Enums.Alliance
+
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.AutoAim.AutoAimCalculator
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.AutoAim.AutoAimCommands
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Enums.IntakeState
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Drive.DriveTrain
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Intake.Gate
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Intake.Intake
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Shooter.FlyWheel
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Shooter.Hood
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Shooter.OuttakeController
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Shooter.Turret
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Vision.Limelight
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants
 import org.firstinspires.ftc.teamcode.robot.data.config.RobotState
-import org.firstinspires.ftc.teamcode.robot.data.enums.IntakeState
-import org.firstinspires.ftc.teamcode.robot.subsystems.drive.DriveTrain
-import org.firstinspires.ftc.teamcode.robot.subsystems.intake.Gate
-import org.firstinspires.ftc.teamcode.robot.subsystems.shooter.AutoAimCalculator
-import org.firstinspires.ftc.teamcode.robot.subsystems.shooter.AutoAimCommands
-import org.firstinspires.ftc.teamcode.robot.subsystems.shooter.FlyWheel
-import org.firstinspires.ftc.teamcode.robot.subsystems.shooter.Hood
-import org.firstinspires.ftc.teamcode.robot.subsystems.shooter.OuttakeController
-import org.firstinspires.ftc.teamcode.robot.subsystems.vision.Limelight
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.time.Duration.Companion.milliseconds
@@ -41,6 +45,9 @@ import kotlin.time.Duration.Companion.seconds
 
 @TeleOp(name = "Auto-Aim TeleOp (Fixed)", group = "Competition")
 class AutoAimTeleOp : NextFTCOpMode() {
+
+    private val panelsTelemetry = PanelsTelemetry.ftcTelemetry
+    private val joinedTelemetry = JoinedTelemetry(telemetry, panelsTelemetry)
 
     init {
         addComponents(
@@ -183,14 +190,21 @@ class AutoAimTeleOp : NextFTCOpMode() {
     }
 
     private fun showSimpleTelemetry() {
-        telemetry.addData("Mode", currentMode.name)
-        telemetry.addData("Ready", RobotState.flywheelAtSpeed && RobotState.turretAligned)
-        telemetry.addData("Dist", "%.1f".format(AutoAimCalculator.calculateBestAvailable().distance))
-        telemetry.update()
+        joinedTelemetry.addData("Mode", currentMode.name)
+        joinedTelemetry.addData("Ready", RobotState.flywheelAtSpeed && RobotState.turretAligned)
+        joinedTelemetry.addData("Dist", "%.1f".format(AutoAimCalculator.calculateBestAvailable().distance))
+        joinedTelemetry.addData("Pose X", "%.1f".format(RobotState.currentX))
+        joinedTelemetry.addData("Pose Y", "%.1f".format(RobotState.currentY))
+        joinedTelemetry.addData("Turret Yaw", "%.1f°".format(Math.toDegrees(RobotState.turretYaw)))
+        joinedTelemetry.update()
     }
 
     private fun showDetailedTelemetry() {
-        telemetry.addLine(AutoAimCalculator.getDebugInfo())
-        telemetry.update()
+        joinedTelemetry.addLine(AutoAimCalculator.getDebugInfo())
+        joinedTelemetry.addData("Flywheel Vel", "%.0f".format(RobotState.flywheelVelocity))
+        joinedTelemetry.addData("Target Vel", "%.0f".format(RobotState.targetFlywheelVelocity))
+        joinedTelemetry.addData("LL Has Target", RobotState.limelightHasTarget)
+        joinedTelemetry.addData("LL TX", "%.2f".format(RobotState.limelightTx))
+        joinedTelemetry.update()
     }
 }

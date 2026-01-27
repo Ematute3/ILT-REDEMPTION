@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.robot.data.enums
+package org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Enums
 
 /**
  * Controls how hood angle and flywheel speed are determined

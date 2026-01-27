@@ -1,3 +1,5 @@
+package org.firstinspires.ftc.teamcode.ILT.Next.Commands
+
 import dev.nextftc.core.commands.Command
 import dev.nextftc.core.commands.delays.Delay
 import dev.nextftc.core.commands.groups.SequentialGroup
@@ -5,11 +7,12 @@ import dev.nextftc.core.commands.utility.InstantCommand
 import org.firstinspires.ftc.teamcode.ILT.Next.Commands.WaitForFlywheelSpeed
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Aimbot.AimbotTable
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Config.RobotConfig
+
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Intake.Gate
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Intake.Intake
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Shooter.FlyWheel
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Shooter.Hood
 import org.firstinspires.ftc.teamcode.robot.data.config.RobotState
-import org.firstinspires.ftc.teamcode.robot.subsystems.intake.Gate
-import org.firstinspires.ftc.teamcode.robot.subsystems.shooter.FlyWheel
-import org.firstinspires.ftc.teamcode.robot.subsystems.shooter.Hood
 import kotlin.time.Duration.Companion.milliseconds
 
 object ShootCommands {

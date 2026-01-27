@@ -4,8 +4,9 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp
 import dev.nextftc.core.components.SubsystemComponent
 import dev.nextftc.ftc.NextFTCOpMode
 import dev.nextftc.ftc.components.BulkReadComponent
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Shooter.Hood
 import org.firstinspires.ftc.teamcode.robot.data.config.RobotState
-import org.firstinspires.ftc.teamcode.robot.subsystems.shooter.Hood
+
 import kotlin.math.abs
 
 /**

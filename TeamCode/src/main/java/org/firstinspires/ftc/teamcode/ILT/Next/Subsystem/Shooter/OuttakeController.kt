@@ -1,13 +1,13 @@
-package org.firstinspires.ftc.teamcode.robot.subsystems.shooter
+package org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Shooter
 
 import dev.nextftc.core.commands.utility.InstantCommand
 import dev.nextftc.core.subsystems.Subsystem
 import dev.nextftc.ftc.ActiveOpMode
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Aimbot.AimbotTable
-import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Shooter.Turret
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Enums.OuttakeMode
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Enums.TurretMode
+
 import org.firstinspires.ftc.teamcode.robot.data.config.RobotState
-import org.firstinspires.ftc.teamcode.robot.data.enums.OuttakeMode
-import org.firstinspires.ftc.teamcode.robot.data.enums.TurretMode
 
 /**
  * OuttakeController - Coordinates all shooter subsystems.
@@ -16,8 +16,7 @@ import org.firstinspires.ftc.teamcode.robot.data.enums.TurretMode
 object OuttakeController : Subsystem {
 
     // ==================== MANUAL AIM SETTINGS ====================
-    var manualAimDistance = 48  // inches (for MANUAL mode)
-        private set
+    @JvmField var manualAimDistance = 48.0  // inches (for MANUAL mode)
 
     private var prevOuttakeMode: OuttakeMode? = null
     private var prevTurretMode: TurretMode? = null
@@ -43,12 +42,12 @@ object OuttakeController : Subsystem {
 
             OuttakeMode.AUTO_ODOMETRY -> {
                 if (RobotState.poseValid) {
-                   // applyAimFromDistance(RobotState.distanceToGoalOdometry, "Odometry")
+                    //applyAimFromDistance(RobotState.distanceToGoalOdometry, "Odometry")
                 }
             }
 
             OuttakeMode.AUTO_LIMELIGHT -> {
-               // applyLimelightAim()
+                // applyLimelightAim()
             }
         }
 
@@ -87,71 +86,71 @@ object OuttakeController : Subsystem {
 
     // ==================== AIM LOGIC ====================
 
-  /*  private fun applyManualAim() {
-        val snapped = AimbotTable.snapToValidDistance(manualAimDistance)
-        // Fixed: AimbotTable.getValues now returns non-null Pair
-        val values = AimbotTable.getValues(snapped.toDouble())
+     private fun applyManualAim() {
+          val snapped = AimbotTable.snapToValidDistance(manualAimDistance)
+          // Fixed: AimbotTable.getValues now returns non-null Pair
+          val values = AimbotTable.getValues(snapped.toDouble())
 
-        RobotState.hoodPosition = values.first
-        FlyWheel.setTargetVelocity(values.second)
-    }
+          RobotState.hoodPosition = values.first
+          FlyWheel.setTargetVelocity(values.second)
+      }
 
-   */
 
-  /*  private fun applyAimFromDistance(distance: Double, source: String) {
-        // Fixed: Uses the clamped version of getValues to prevent NullPointer/Deque errors
-        val values = AimbotTable.getValues(distance)
 
-        // Apply with competition offsets
-        RobotState.hoodPosition = (values.first + 0.06).coerceIn(0.0, 1.0)
-        FlyWheel.setTargetVelocity(values.second + 100.0)
+     private fun applyAimFromDistance(distance: Double, source: String) {
+          // Fixed: Uses the clamped version of getValues to prevent NullPointer/Deque errors
+          val values = AimbotTable.getValues(distance)
 
-        ActiveOpMode.telemetry.addData("Aim Source", source)
-    }
+          // Apply with competition offsets
+          RobotState.hoodPosition = (values.first + 0.06).coerceIn(0.0, 1.0)
+          FlyWheel.setTargetVelocity(values.second + 100.0)
 
-    private fun applyLimelightAim() {
-        val llDistance = RobotState.distanceToGoalLimelight
+          ActiveOpMode.telemetry.addData("Aim Source", source)
+      }
 
-        when {
-            llDistance != null && RobotState.limelightHasTarget -> {
-                applyAimFromDistance(llDistance, "Limelight")
-            }
-            RobotState.poseValid -> {
-                applyAimFromDistance(RobotState.distanceToGoalOdometry, "Odo Fallback")
-            }
-            else -> {
-                // Last resort: Use a default middle-field distance
-                applyAimFromDistance(72.0, "DEFAULT")
-            }
-        }
-    }
+      private fun applyLimelightAim() {
+          val llDistance = RobotState.distanceToGoalLimelight
 
-    fun canShoot(): Boolean {
-        // Only allow shooting if mechanical systems are locked on
-        return RobotState.flywheelAtSpeed && RobotState.turretAligned
-    }
+          when {
+              llDistance != null && RobotState.limelightHasTarget -> {
+                  applyAimFromDistance(llDistance, "Limelight")
+              }
+              RobotState.poseValid -> {
+                  applyAimFromDistance(RobotState.distanceToGoalOdometry, "Odo Fallback")
+              }
+              else -> {
+                  // Last resort: Use a default middle-field distance
+                  applyAimFromDistance(72.0, "DEFAULT")
+              }
+          }
+      }
 
-    // ==================== MODE COMMANDS ====================
+      fun canShoot(): Boolean {
+          // Only allow shooting if mechanical systems are locked on
+          return RobotState.flywheelAtSpeed && RobotState.turretAligned
+      }
 
-    val idleMode = InstantCommand {
-        RobotState.outtakeMode = OuttakeMode.IDLE
-        RobotState.turretMode = TurretMode.IDLE
-    }
+      // ==================== MODE COMMANDS ====================
 
-    val manualMode = InstantCommand {
-        RobotState.outtakeMode = OuttakeMode.MANUAL
-        RobotState.turretMode = TurretMode.MANUAL
-    }
+      val idleMode = InstantCommand {
+          RobotState.outtakeMode = OuttakeMode.IDLE
+          RobotState.turretMode = TurretMode.IDLE
+      }
 
-    val autoOdometryMode = InstantCommand {
-        RobotState.outtakeMode = OuttakeMode.AUTO_ODOMETRY
-        RobotState.turretMode = TurretMode.ODOMETRY
-    }
+      val manualMode = InstantCommand {
+          RobotState.outtakeMode = OuttakeMode.MANUAL
+          RobotState.turretMode = TurretMode.MANUAL
+      }
 
-    val autoLimelightMode = InstantCommand {
-        RobotState.outtakeMode = OuttakeMode.AUTO_LIMELIGHT
-        RobotState.turretMode = TurretMode.LIMELIGHT
-    }
+      val autoOdometryMode = InstantCommand {
+          RobotState.outtakeMode = OuttakeMode.AUTO_ODOMETRY
+          RobotState.turretMode = TurretMode.ODOMETRY
+      }
 
-   */
+      val autoLimelightMode = InstantCommand {
+          RobotState.outtakeMode = OuttakeMode.AUTO_LIMELIGHT
+          RobotState.turretMode = TurretMode.LIMELIGHT
+      }
+
+
 }

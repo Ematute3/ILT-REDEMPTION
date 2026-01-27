@@ -87,9 +87,9 @@ object AimbotTable {
      * Snap to nearest valid distance (multiples of 12)
      * Used for manual operator adjustments.
      */
-    fun snapToValidDistance(distance: Int): Int {
+    fun snapToValidDistance(distance: Double): Double {
         val snapped = (distance / 12) * 12
-        return snapped.coerceIn(12, 144)
+        return snapped.coerceIn(12.0, 144.0)
     }
 
     /**

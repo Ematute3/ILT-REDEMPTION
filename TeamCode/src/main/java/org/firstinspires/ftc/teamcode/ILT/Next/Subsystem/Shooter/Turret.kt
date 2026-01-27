@@ -9,7 +9,7 @@ import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Config.RobotConfig
 import org.firstinspires.ftc.teamcode.robot.data.config.RobotState
 import kotlin.math.*
 
-object Turret : Subsystem {
+object Turret : Subsystem{
     enum class State { IDLE, MANUAL, LIMELIGHT, ODOMETRY, FUSED }
 
     var motor = MotorEx(RobotConfig.Hardware.TURRET_MOTOR)
@@ -50,6 +50,7 @@ object Turret : Subsystem {
             State.FUSED -> fusedAimingLogic()
         }
     }
+    @JvmField val threshold = 0.1
 
     private fun fusedAimingLogic() {
         if (!RobotState.poseValid) {
@@ -61,19 +62,20 @@ object Turret : Subsystem {
         val deltaX = RobotState.goalX - RobotState.currentX
         val deltaY = RobotState.goalY - RobotState.currentY
         val fieldAngle = atan2(deltaY, deltaX)
-        val robotHeading = if (abs(RobotState.currentHeading) > 2.0 * PI)
-            Math.toRadians(RobotState.currentHeading) else RobotState.currentHeading
 
+        // Ensure headings are consistent
+        val robotHeading = normalizeAngle(RobotState.currentHeading)
         var targetYaw = normalizeAngle(fieldAngle - robotHeading)
 
-        // 2. LIMELIGHT CORRECTION (The "Polishing" Layer)
+        // 2. LIMELIGHT CORRECTION
         if (RobotState.limelightHasTarget) {
             val tx = RobotState.limelightTx
 
-            // Only correct if error is significant to prevent jitter
-            if (abs(tx) > 0.5) {
-                // FIXED: Changed sign to (+) and added visionGain to stop oscillation
-                // We convert tx to radians and apply a portion of it to the Odo target
+            // REDUCED THRESHOLD: 0.1 degrees is a much safer "effective zero"
+
+
+            if (abs(tx) > threshold) {
+                // Apply a P-loop style correction
                 val visionCorrection = Math.toRadians(tx) * visionGain
                 targetYaw = normalizeAngle(targetYaw + visionCorrection)
             }
@@ -115,7 +117,7 @@ object Turret : Subsystem {
 
         // Friction Kick
         val errorDeg = Math.toDegrees(abs(clampedTarget - currentYaw))
-        if (errorDeg > 0.5) {
+        if (errorDeg > 0.25) {
             power += (if (power >= 0) 1.0 else -1.0) * minPower
         } else {
             power = 0.0

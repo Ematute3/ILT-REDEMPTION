@@ -1,12 +1,13 @@
-package org.firstinspires.ftc.teamcode.robot.subsystems.drive
+package org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Drive
 
 import com.pedropathing.geometry.Pose
 import dev.nextftc.core.commands.utility.InstantCommand
 import dev.nextftc.core.subsystems.Subsystem
 import dev.nextftc.extensions.pedro.PedroComponent
+import dev.nextftc.extensions.pedro.PedroComponent.Companion.follower
 import dev.nextftc.ftc.ActiveOpMode
-import org.firstinspires.ftc.teamcode.pedroPathing.Tuning.follower
 import org.firstinspires.ftc.teamcode.robot.data.config.RobotState
+
 import kotlin.math.sqrt
 
 
@@ -46,8 +47,6 @@ object DriveTrain : Subsystem {
         // The () invokes the command's update logic
 
         // Update pose from Pedro follower
-        val follower = PedroComponent.follower
-
         if (follower != null) {
             try {
                 val pose = follower.pose
@@ -92,20 +91,19 @@ object DriveTrain : Subsystem {
      * Switch between robot centric and field centric driving.
      * Must recreate the command with new setting.
      */
-   /* fun setRobotCentric(robotCentric: Boolean) {
-        if (!isInitialized) return
+    /* fun setRobotCentric(robotCentric: Boolean) {
+         if (!isInitialized) return
 
-        driverControlled = PedroDriverControlled(
-            Gamepads.gamepad1.leftStickY,
-            Gamepads.gamepad1.leftStickX,
-            Gamepads.gamepad1.rightStickX,
-            robotCentric
-        )
-    }
+         driverControlled = PedroDriverControlled(
+             Gamepads.gamepad1.leftStickY,
+             Gamepads.gamepad1.leftStickX,
+             Gamepads.gamepad1.rightStickX,
+             robotCentric
+         )
+     }
 
-    */
-   val resetHeading = InstantCommand{
-
-        follower.pose = Pose(RobotState.currentX, RobotState.currentY, 0.0)
+     */
+    val resetHeading = InstantCommand{
+        follower?.pose = Pose(RobotState.currentX, RobotState.currentY, 0.0)
     }
 }

@@ -9,7 +9,8 @@ import dev.nextftc.ftc.Gamepads
 import dev.nextftc.ftc.NextFTCOpMode
 import dev.nextftc.ftc.components.BulkReadComponent
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Config.RobotConfig
-import org.firstinspires.ftc.teamcode.robot.subsystems.shooter.FlyWheel
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Shooter.FlyWheel
+
 import kotlin.math.abs
 
 @TeleOp(name = "Flywheel PID Tuner", group = "Testing")

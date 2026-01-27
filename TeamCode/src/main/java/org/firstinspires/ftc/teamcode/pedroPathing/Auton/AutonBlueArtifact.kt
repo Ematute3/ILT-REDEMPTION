@@ -21,16 +21,17 @@ import dev.nextftc.ftc.NextFTCOpMode
 import dev.nextftc.ftc.components.BulkReadComponent
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Config.RobotConfig
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Enums.Alliance
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Drive.DriveTrain
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Intake.Gate
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Intake.Intake
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Shooter.FlyWheel
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Shooter.Hood
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Shooter.OuttakeController
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Shooter.Turret
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Vision.Limelight
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants
 import org.firstinspires.ftc.teamcode.robot.data.config.RobotState
-import org.firstinspires.ftc.teamcode.robot.subsystems.drive.DriveTrain
-import org.firstinspires.ftc.teamcode.robot.subsystems.intake.Gate
-import org.firstinspires.ftc.teamcode.robot.subsystems.shooter.FlyWheel
-import org.firstinspires.ftc.teamcode.robot.subsystems.shooter.Hood
-import org.firstinspires.ftc.teamcode.robot.subsystems.shooter.OuttakeController
-import org.firstinspires.ftc.teamcode.robot.subsystems.vision.Limelight
+
 
 @Autonomous(name = "Main Autonomous", group = "Competition")
 class MainAutonomous : NextFTCOpMode() {
@@ -40,7 +41,9 @@ class MainAutonomous : NextFTCOpMode() {
     init {
         addComponents(
             PedroComponent(Constants::createFollower),
-            SubsystemComponent(DriveTrain, FlyWheel, Intake, Turret, Hood, Limelight, OuttakeController, Gate),
+            SubsystemComponent(DriveTrain,
+                FlyWheel, Intake, Turret, Hood, Limelight, OuttakeController, Gate
+            ),
             BulkReadComponent,
             BindingsComponent
         )

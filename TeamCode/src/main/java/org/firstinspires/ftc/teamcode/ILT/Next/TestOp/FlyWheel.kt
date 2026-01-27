@@ -5,7 +5,8 @@ import dev.nextftc.control.KineticState
 import dev.nextftc.core.components.SubsystemComponent
 import dev.nextftc.ftc.NextFTCOpMode
 import dev.nextftc.ftc.components.BulkReadComponent
-import org.firstinspires.ftc.teamcode.robot.subsystems.shooter.FlyWheel
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Shooter.FlyWheel
+
 
 /**
  * Flywheel Test OpMode

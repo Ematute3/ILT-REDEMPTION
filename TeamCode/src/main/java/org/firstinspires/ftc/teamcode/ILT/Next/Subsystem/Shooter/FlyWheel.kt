@@ -1,7 +1,5 @@
-package org.firstinspires.ftc.teamcode.robot.subsystems.shooter
+package org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Shooter
 
-import com.bylazar.telemetry.JoinedTelemetry
-import com.bylazar.telemetry.PanelsTelemetry
 import dev.nextftc.control.KineticState
 import dev.nextftc.control.builder.controlSystem
 import dev.nextftc.core.commands.utility.InstantCommand
@@ -9,7 +7,6 @@ import dev.nextftc.core.subsystems.Subsystem
 import dev.nextftc.ftc.ActiveOpMode
 import dev.nextftc.hardware.impl.MotorEx
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Config.RobotConfig
-
 import org.firstinspires.ftc.teamcode.robot.data.config.RobotState
 import kotlin.math.abs
 
@@ -47,19 +44,16 @@ object FlyWheel : Subsystem {
 
     // ==================== PERIODIC ====================
     override fun periodic() {
-        controller=controlSystem {
-            velPid(RobotConfig.FlywheelConfig.pid)
-            basicFF(RobotConfig.FlywheelConfig.feedforward)
-        }
         // 1. Update sensor data
         motorRpm = fly1.velocity * 60.0 / RobotConfig.FlywheelConfig.MOTOR_TICKS_PER_REV
 
         // 2. Calculate power using the EXACT pattern from NextControl docs:
         // controller.calculate(KineticState(position, velocity))
+        // Use actual velocity, not target velocity!
         val power = controller.calculate(
             KineticState(
                 fly1.motor.currentPosition.toDouble(),
-                targetVelocity
+                fly1.velocity
             )
         )
 
@@ -124,6 +118,6 @@ object FlyWheel : Subsystem {
     }
 
     val reverse = InstantCommand {
-       targetVelocity = -100.0
+        targetVelocity = -100.0
     }
 }

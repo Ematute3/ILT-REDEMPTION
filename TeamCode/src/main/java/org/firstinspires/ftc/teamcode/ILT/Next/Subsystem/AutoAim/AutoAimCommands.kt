@@ -1,13 +1,16 @@
-package org.firstinspires.ftc.teamcode.robot.subsystems.shooter
+package org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.AutoAim
 
 import dev.nextftc.core.commands.Command
-  // ← add this import if needed
 import dev.nextftc.core.commands.delays.Delay
 import dev.nextftc.core.commands.groups.ParallelGroup
 import dev.nextftc.core.commands.groups.SequentialGroup
 import dev.nextftc.core.commands.utility.InstantCommand
 import dev.nextftc.core.commands.utility.LambdaCommand
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Enums.IntakeState
 import org.firstinspires.ftc.teamcode.robot.data.config.RobotState
+
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Shooter.FlyWheel
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Shooter.Hood
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -52,7 +55,7 @@ object AutoAimCommands {
 
     val continuousAim = LambdaCommand()
         .setUpdate {
-            val params = AutoAimCalculator.calculateBestAvailable() ?: return@setUpdate
+            val params = AutoAimCalculator.calculateBestAvailable()
 
             // Only update if distance changed significantly (reduce jitter)
             if (kotlin.math.abs(params.distance - lastDistance) > 3.0) {
@@ -73,22 +76,22 @@ object AutoAimCommands {
         InstantCommand { FlyWheel.setTargetVelocity(AutoAimCalculator.getFlywheelVelocity()) },
 
         WaitUntil { RobotState.flywheelAtSpeed },
-            Delay(2.seconds),
+        Delay(2.seconds),
 
         InstantCommand { AutoAimCalculator.applyToSubsystems() },
 
         WaitUntil { RobotState.turretAligned && RobotState.flywheelAtSpeed },
-            Delay(1.seconds),
+        Delay(1.seconds),
 
         InstantCommand {
-            RobotState.intakeState = org.firstinspires.ftc.teamcode.robot.data.enums.IntakeState.FEEDING
+            RobotState.intakeState = IntakeState.FEEDING
         },
 
         Delay(500.milliseconds),
 
         InstantCommand {
             FlyWheel.setTargetVelocity(0.0)
-            RobotState.intakeState = org.firstinspires.ftc.teamcode.robot.data.enums.IntakeState.STOPPED
+            RobotState.intakeState = IntakeState.STOPPED
         }
     )
 
@@ -106,13 +109,13 @@ object AutoAimCommands {
 
     fun createFireSequence(): Command = SequentialGroup(
         InstantCommand {
-            RobotState.intakeState = org.firstinspires.ftc.teamcode.robot.data.enums.IntakeState.FEEDING
+            RobotState.intakeState = IntakeState.FEEDING
         },
 
         Delay(500.milliseconds),
 
         InstantCommand {
-            RobotState.intakeState = org.firstinspires.ftc.teamcode.robot.data.enums.IntakeState.STOPPED
+            RobotState.intakeState = IntakeState.STOPPED
         }
     )
 

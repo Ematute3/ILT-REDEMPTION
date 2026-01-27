@@ -1,8 +1,10 @@
-package org.firstinspires.ftc.teamcode.robot.subsystems.shooter
+package org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.AutoAim
 
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Aimbot.Aimbot
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Aimbot.AimbotTable
 import org.firstinspires.ftc.teamcode.robot.data.config.RobotState
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Shooter.FlyWheel
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Shooter.Hood
 import kotlin.math.pow
 import kotlin.math.sqrt
 
@@ -20,6 +22,7 @@ import kotlin.math.sqrt
  * - Configurable offsets for fine-tuning
  * - Safety bounds checking
  */
+@com.bylazar.configurables.annotations.Configurable
 object AutoAimCalculator {
 
     /**

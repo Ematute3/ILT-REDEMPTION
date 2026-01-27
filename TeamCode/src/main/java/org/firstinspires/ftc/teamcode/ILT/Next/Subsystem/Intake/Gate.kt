@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.robot.subsystems.intake
+package org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Intake
 
 import dev.nextftc.core.commands.utility.InstantCommand
 import dev.nextftc.core.subsystems.Subsystem

@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.robot.opmodes
+package org.firstinspires.ftc.teamcode.ILT.Next
 
 import com.bylazar.telemetry.JoinedTelemetry
 import com.bylazar.telemetry.PanelsTelemetry
@@ -17,22 +17,27 @@ import dev.nextftc.extensions.pedro.PedroDriverControlled
 import dev.nextftc.ftc.Gamepads
 
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Config.RobotConfig
+
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Enums.Alliance
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Drive.DriveTrain
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Intake.Gate
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Intake.Intake
-import org.firstinspires.ftc.teamcode.robot.data.config.RobotState
-import org.firstinspires.ftc.teamcode.robot.subsystems.intake.Gate
-import org.firstinspires.ftc.teamcode.robot.subsystems.shooter.FlyWheel
-import org.firstinspires.ftc.teamcode.robot.subsystems.shooter.Hood
-import org.firstinspires.ftc.teamcode.robot.subsystems.shooter.OuttakeController
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Shooter.FlyWheel
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Shooter.Hood
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Shooter.OuttakeController
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Shooter.Turret
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Vision.Limelight
+import org.firstinspires.ftc.teamcode.ILT.Next.Commands.ShootCommands
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants
-import org.firstinspires.ftc.teamcode.robot.subsystems.drive.DriveTrain
-import org.firstinspires.ftc.teamcode.robot.subsystems.vision.Limelight
+import org.firstinspires.ftc.teamcode.robot.data.config.RobotState
 import kotlin.math.PI
 import kotlin.math.abs
 
 @TeleOp(name = "Main TeleOp", group = "Competition")
 class MainTeleOp : NextFTCOpMode() {
+
+    private val panelsTelemetry = PanelsTelemetry.ftcTelemetry
+    private val joinedTelemetry = JoinedTelemetry(telemetry, panelsTelemetry)
 
     init {
         addComponents(
@@ -77,9 +82,7 @@ class MainTeleOp : NextFTCOpMode() {
         // Gate Controls
         Gamepads.gamepad1.dpadLeft whenBecomesTrue Gate.open
         Gamepads.gamepad1.dpadRight whenBecomesTrue Gate.close
-        Gamepads.gamepad1.x whenBecomesTrue {Alliance.BLUE}
-
-
+        Gamepads.gamepad1.x whenBecomesTrue { RobotConfig.alliance = Alliance.BLUE }
     }
 
     override fun onUpdate() {
@@ -105,11 +108,15 @@ class MainTeleOp : NextFTCOpMode() {
         // If the operator touches the sticks, it should probably disable Auto-Aim to prevent fighting
 
 
-        // Telemetry
-        telemetry.addData("Mode", currentMode)
-        telemetry.addData("Turret Aligned", RobotState.turretAligned)
-        telemetry.addData("Hood Pos", "%.2f".format(RobotState.hoodPosition))
-        telemetry.addData("Flywheel", if (FlyWheel.isAtTargetVelocity()) "READY" else "SPINNING")
-       telemetry.update()
+        // Telemetry with Panels
+        joinedTelemetry.addData("Mode", currentMode)
+        joinedTelemetry.addData("Turret Aligned", RobotState.turretAligned)
+        joinedTelemetry.addData("Hood Pos", "%.2f".format(RobotState.hoodPosition))
+        joinedTelemetry.addData("Flywheel", if (FlyWheel.isAtTargetVelocity()) "READY" else "SPINNING")
+        joinedTelemetry.addData("Pose X", "%.1f".format(RobotState.currentX))
+        joinedTelemetry.addData("Pose Y", "%.1f".format(RobotState.currentY))
+        joinedTelemetry.addData("Heading", "%.1f°".format(Math.toDegrees(RobotState.currentHeading)))
+        joinedTelemetry.addData("Alliance", RobotConfig.alliance.name)
+        joinedTelemetry.update()
     }
 }

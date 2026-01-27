@@ -6,10 +6,11 @@ import dev.nextftc.core.components.SubsystemComponent
 import dev.nextftc.ftc.ActiveOpMode
 import dev.nextftc.ftc.NextFTCOpMode
 import dev.nextftc.ftc.components.BulkReadComponent
-import org.firstinspires.ftc.teamcode.robot.subsystems.intake.Gate
-import org.firstinspires.ftc.teamcode.robot.subsystems.shooter.Hood
+
 import org.firstinspires.ftc.teamcode.robot.data.config.RobotState
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Config.RobotConfig
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Intake.Gate
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Shooter.Hood
 
 @TeleOp(name = "Test - Gate and Hood", group = "Test")
 class GateHoodTestOpMode : NextFTCOpMode() {
