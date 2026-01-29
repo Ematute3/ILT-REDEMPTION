@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.robot.subsystems.shooter
+package org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Shooter
 
 import dev.nextftc.control.KineticState
 import dev.nextftc.control.builder.controlSystem
@@ -7,7 +7,6 @@ import dev.nextftc.core.subsystems.Subsystem
 import dev.nextftc.ftc.ActiveOpMode
 import dev.nextftc.hardware.impl.MotorEx
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Config.RobotConfig
-
 import org.firstinspires.ftc.teamcode.robot.data.config.RobotState
 import kotlin.math.abs
 
@@ -28,6 +27,13 @@ object FlyWheel : Subsystem {
         basicFF(RobotConfig.FlywheelConfig.feedforward)
     }
 
+    private var lastPidKp = RobotConfig.FlywheelConfig.pid.kP
+    private var lastPidKi = RobotConfig.FlywheelConfig.pid.kI
+    private var lastPidKd = RobotConfig.FlywheelConfig.pid.kD
+    private var lastFfKv = RobotConfig.FlywheelConfig.feedforward.kV
+    private var lastFfKs = RobotConfig.FlywheelConfig.feedforward.kS
+    private var lastFfKa = RobotConfig.FlywheelConfig.feedforward.kA
+
     // ==================== STATE ====================
     @JvmField
     var targetVelocity = 0.0
@@ -45,11 +51,13 @@ object FlyWheel : Subsystem {
 
     // ==================== PERIODIC ====================
     override fun periodic() {
-        // 1. Update sensor data
+        updateControllerFromConfig()
+
         motorRpm = fly1.velocity * 60.0 / RobotConfig.FlywheelConfig.MOTOR_TICKS_PER_REV
 
-        // 2. Calculate power using the EXACT pattern from NextControl docs:
+        // Calculate power using current config (PID/FF from Panels)
         // controller.calculate(KineticState(position, velocity))
+        // Use actual velocity, not target velocity!
         val power = controller.calculate(
             KineticState(
                 fly1.motor.currentPosition.toDouble(),
@@ -66,6 +74,8 @@ object FlyWheel : Subsystem {
         RobotState.flywheelAtSpeed = isAtTargetVelocity()
         RobotState.targetFlywheelVelocity = targetVelocity
 
+
+
         // 5. Telemetry
         ActiveOpMode.telemetry.run {
             addData("--- FlyWheel ---", "")
@@ -78,6 +88,27 @@ object FlyWheel : Subsystem {
     }
 
     // ==================== HELPER FUNCTIONS ====================
+
+    /** Rebuild controller when PID/FF change on Panels so edits take effect live. */
+    private fun updateControllerFromConfig() {
+        val pid = RobotConfig.FlywheelConfig.pid
+        val ff = RobotConfig.FlywheelConfig.feedforward
+        val pidChanged = pid.kP != lastPidKp || pid.kI != lastPidKi || pid.kD != lastPidKd
+        val ffChanged = ff.kV != lastFfKv || ff.kS != lastFfKs || ff.kA != lastFfKa
+        if (pidChanged || ffChanged) {
+            controller = controlSystem {
+                velPid(pid)
+                basicFF(ff)
+            }
+            controller.goal = KineticState(0.0, targetVelocity)
+            lastPidKp = pid.kP
+            lastPidKi = pid.kI
+            lastPidKd = pid.kD
+            lastFfKv = ff.kV
+            lastFfKs = ff.kS
+            lastFfKa = ff.kA
+        }
+    }
 
     fun isAtTargetVelocity(): Boolean {
         return abs(fly1.velocity - targetVelocity) < RobotConfig.FlywheelConfig.velocityTolerance
@@ -101,35 +132,21 @@ object FlyWheel : Subsystem {
     }
 
     /** Stop the flywheel */
-    fun stop() {
-        targetVelocity = 0.0
 
-    }
 
     // ==================== COMMANDS ====================
 
     /** Command to spin at full power (bypasses PID) */
-    val spinFull = InstantCommand {
-        fly1.power = 1.0
-        fly2.power = 1.0
-    }
+
     val spin = InstantCommand{
-        targetVelocity = 1500.0
+        targetVelocity = 200.0
 
     }
     val stop = InstantCommand{
         targetVelocity = 0.0
     }
 
-    /** Command to stop motors directly */
-    val stopMotors = InstantCommand {
-        fly1.power = 0.0
-        fly2.power = 0.0
-    }
-
-    /** Command to reverse (clear jams) */
     val reverse = InstantCommand {
-        fly1.power = -0.5
-        fly2.power = -0.5
+        targetVelocity = -100.0
     }
 }

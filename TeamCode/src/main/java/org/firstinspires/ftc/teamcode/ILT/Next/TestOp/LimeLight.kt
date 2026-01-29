@@ -8,9 +8,9 @@ import dev.nextftc.ftc.NextFTCOpMode
 import dev.nextftc.ftc.components.BulkReadComponent
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Config.RobotConfig
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Shooter.Turret
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Vision.Limelight
 
 import org.firstinspires.ftc.teamcode.robot.data.config.RobotState
-import org.firstinspires.ftc.teamcode.robot.subsystems.vision.Limelight
 
 
 /**
@@ -108,7 +108,7 @@ class LimelightTest : NextFTCOpMode() {
         telemetry.addLine("--- CALIBRATION VALUES ---")
         telemetry.addData(
             "Mount Angle (Dpad U/D)",
-             RobotConfig.LimelightConfig.mountAngleDeg
+            RobotConfig.LimelightConfig.mountAngleDeg
         )
         telemetry.addData(
             "Lens Height (Dpad L/R)",

@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.robot.subsystems.vision
+package org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Vision
 
 import com.qualcomm.hardware.limelightvision.LLResult
 import com.qualcomm.hardware.limelightvision.Limelight3A
@@ -6,8 +6,9 @@ import dev.nextftc.core.subsystems.Subsystem
 import dev.nextftc.ftc.ActiveOpMode
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Config.RobotConfig
 
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Enums.Motif
+
 import org.firstinspires.ftc.teamcode.robot.data.config.RobotState
-import org.firstinspires.ftc.teamcode.robot.data.enums.Motif
 
 import kotlin.math.PI
 import kotlin.math.abs
@@ -19,7 +20,7 @@ import kotlin.math.tan
  * Limelight vision subsystem.
  * Handles target detection, distance calculation, and fiducial tracking.
  */
-object Limelight: Subsystem {
+object Limelight: Subsystem{
 
     private var limelight: Limelight3A? = null
     private var isInitialized = false

@@ -1,14 +1,21 @@
 package org.firstinspires.ftc.teamcode.robot.data.config
 
+import com.bylazar.configurables.annotations.Configurable
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Config.RobotConfig
 import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Enums.Alliance
-import org.firstinspires.ftc.teamcode.robot.data.enums.*
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Enums.IntakeState
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Enums.Motif
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Enums.OuttakeMode
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Enums.ShootMode
+import org.firstinspires.ftc.teamcode.ILT.Next.Subsystem.Data.Enums.TurretMode
+
 
 /**
  * Centralized robot state.
  * Single source of truth for all shared state variables.
  * Subsystems read from and write to this object.
  */
+@Configurable
 object RobotState {
 
     // ==================== POSE STATE ====================
